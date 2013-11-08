@@ -482,20 +482,17 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 				}
 				else
 				{
-                    if ([[UIDevice currentDevice].systemVersion hasPrefix:@"6"])
-                    {
-                        [self applyColor:[UIColor blueColor]
-                                  toText:attrString
-                              atPosition:component.position
-                              withLength:component.text.length];
-                    }
-                    else
-                    {
+                    #ifdef __IPHONE_7_0
                         [self applyColor:self.window.tintColor
                                   toText:attrString
                               atPosition:component.position
                               withLength:component.text.length];
-                    }
+                    #else
+                        [self applyColor:[UIColor blueColor]
+                                  toText:attrString
+                              atPosition:component.position
+                              withLength:component.text.length];
+                    #endif
 				}
 			}
 
