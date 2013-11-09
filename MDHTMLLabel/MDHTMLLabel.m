@@ -167,7 +167,6 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 @property (nonatomic, assign) CGSize contentSize;
 
 @property (nonatomic, assign) NSInteger selectedLinkComponentIndex;
-@property (nonatomic, assign) CFRange visibleRange;
 @property (nonatomic, assign) BOOL highlighted;
 
 - (MDHTMLExtractedStyle *)extractStyleFromText:(NSString *)data;
@@ -652,8 +651,6 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 			}
 		}
 	}
-
-	self.visibleRange = CTFrameGetVisibleStringRange(frame);
 
 	CFRelease(font);
 	CFRelease(path);
