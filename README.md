@@ -9,6 +9,13 @@ MDHTMLLabel is a lightweight, easy to use class for rendering text containing HT
 
 The recommended method of installation is to use [CocoaPods](http://cocoapods.org) which is a dependency manager for Objective-C, that automates and simplifies the process of using 3rd-party libraries in your projects.
 
+Include the following in your Podfile:
+
+```ruby
+platform :ios, '6.0'
+pod 'MDHTMLLabel'
+```
+
 You can also choose to simply drag the source files in to your project instead.
 
 ## How To Use
