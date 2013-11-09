@@ -571,10 +571,20 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
     CFRelease(attrString);
 
 	CGMutablePathRef path = CGPathCreateMutable();
-	CGRect bounds = CGRectMake(0.0, 0.0, self.frame.size.width, self.frame.size.height);
+
+    CGRect bounds;
+    if (_preferredMaxLayoutWidth)
+    {
+        bounds = CGRectMake(0.0, 0.0, _preferredMaxLayoutWidth, self.frame.size.height);
+    }
+    else
+    {
+        bounds = CGRectMake(0.0, 0.0, self.frame.size.width, self.frame.size.height);
+    }
+
 	CGPathAddRect(path, NULL, bounds);
 
-    CTFrameRef frame = CTFramesetterCreateFrame(framesetter,CFRangeMake(0, 0), path, NULL);
+    CTFrameRef frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
 
 	CFRange range;
     CGSize constraint;
