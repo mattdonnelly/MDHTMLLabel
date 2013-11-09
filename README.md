@@ -3,6 +3,15 @@ MDHTMLLabel
 
 MDHTMLLabel is a lightweight, easy to use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost exactly the same as UILabel and allows you to fully customize its appearence with added features thanks to CoreText. It also lets you handle when a user taps or holds down a link in the label unlike many similar libraries.
 
+It provides:
+
+- Link interaction
+- Auto-detection of URLs not wrapped in anchor tags
+- Bold and italic text styles
+- Color and stroke styles
+- Identation, kerning and line spacing settings
+- Text shadow styles
+
 ## Getting Started
 
 ### Installation with CocoaPods
