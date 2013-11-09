@@ -9,7 +9,7 @@ It provides:
 - Auto-detection of URLs not wrapped in anchor tags
 - Bold and italic text styles
 - Color and stroke styles
-- Identation, kerning and line spacing settings
+- Indentation, kerning and line spacing settings
 - Text shadow styles
 
 <p align="center" >
