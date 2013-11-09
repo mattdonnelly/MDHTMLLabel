@@ -12,6 +12,10 @@ It provides:
 - Identation, kerning and line spacing settings
 - Text shadow styles
 
+<p align="center" >
+  <img src="https://raw.github.com/mattdonnelly/MDHTMLLabel/master/Screenshot.png" alt="MDHTMLLabel" title="MDHTMLLabel">
+</p>
+
 ## Getting Started
 
 ### Installation with CocoaPods
