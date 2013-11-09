@@ -65,6 +65,10 @@ extern NSString *const MDHTMLLabelAttributeFontStyleItalicName;
 @property (nonatomic, assign) NSLineBreakMode lineBreakMode;
 @property (nonatomic, assign) CGFloat lineSpacing;
 
+@property (nonatomic, retain) UIColor *shadowColor;
+@property (nonatomic, assign) CGSize shadowOffset;
+@property (nonatomic, assign) CGFloat shadowRadius;
+
 @property (nonatomic, assign) CGFloat preferredMaxLayoutWidth;
 
 + (CGFloat)heightForHTMLString:(NSString *)htmlString
