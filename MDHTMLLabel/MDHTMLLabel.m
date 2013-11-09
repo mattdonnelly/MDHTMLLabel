@@ -609,7 +609,8 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
     }
 
     // Update content size
-    self.contentSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, _plainText.length), nil, constraint, &range);
+    CGSize suggestedFrameSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, _plainText.length), nil, constraint, &range);
+    self.contentSize = CGSizeMake(ceilf(suggestedFrameSize.width), ceilf(suggestedFrameSize.height));
 
     // Create buttons for link components
 	if (_selectedLinkComponentIndex == -1)
