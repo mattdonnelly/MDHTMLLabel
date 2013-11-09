@@ -276,6 +276,13 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 
 #pragma mark - Setters
 
+- (void)setFrame:(CGRect)frame
+{
+    [super setFrame:frame];
+
+    [self setNeedsDisplay];
+}
+
 - (void)setFont:(UIFont *)font
 {
     _font = font;
