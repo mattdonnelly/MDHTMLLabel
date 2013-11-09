@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.summary  = 'A lightweight class for rendering text containing HTML tags'
   s.homepage = 'https://github.com/mattdonnelly/MDHTMLLabel'
   s.authors  = { 'Matt Donnelly' => 'mattdonnelly@me.com' }
-  s.source   = { :git => 'https://github.com/mattdonnelly/MDHTMLLabel.git', :tag => "1.0" }
+  s.source   = { :git => 'https://github.com/mattdonnelly/MDHTMLLabel.git', :tag => "0.0.1" }
   s.requires_arc = true
 
   s.ios.deployment_target = '6.0'
