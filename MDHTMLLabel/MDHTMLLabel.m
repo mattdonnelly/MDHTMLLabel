@@ -269,6 +269,9 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 	self.lineBreakMode = NSLineBreakByWordWrapping;
 	self.lineSpacing = 3;
 	self.selectedLinkComponentIndex = -1;
+    self.shadowColor = nil;
+    self.shadowOffset = CGSizeZero;
+    self.shadowRadius = 1.0;
 }
 
 #pragma mark - Setters
@@ -409,6 +412,15 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
         CGContextSetTextMatrix(context, CGAffineTransformIdentity);
         CGAffineTransform flipVertical = CGAffineTransformMake(1, 0, 0, -1, 0, self.frame.size.height);
         CGContextConcatCTM(context, flipVertical);
+
+        if (_shadowColor)
+        {
+            CGContextSetShadowWithColor(context, _shadowOffset, _shadowRadius, _shadowColor.CGColor);
+        }
+        else if (!CGSizeEqualToSize(_shadowOffset, CGSizeZero))
+        {
+            CGContextSetShadow(context, _shadowOffset, _shadowRadius);
+        }
     }
 
     // Create attributed string ref for text

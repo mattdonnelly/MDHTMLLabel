@@ -45,6 +45,8 @@ similar libraries.";
 {
     [super viewDidLoad];
 
+    self.view.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
+
     MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] init];
     htmlLabel.text = kDemoText;
     htmlLabel.delegate = self;
@@ -54,6 +56,9 @@ similar libraries.";
                                  MDHTMLLabelAttributeUnderlineName: @(1)};
     htmlLabel.selectedLinkAttributes = @{MDHTMLLabelAttributeColorName: @"#ff0000",
                                          MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:16.0f]};
+    htmlLabel.shadowColor = [UIColor whiteColor];
+    htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
+    htmlLabel.shadowRadius = 1.0;
     htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
     [self.view addSubview:htmlLabel];
