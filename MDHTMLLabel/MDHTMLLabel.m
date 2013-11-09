@@ -1170,9 +1170,15 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 
 - (MDHTMLExtractedStyle *)extractStyleFromText:(NSString *)data
 {
-    // Replace html entities for angle brackets
-    data = [data stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
-    data = [data stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+    // Replace html entities
+    if (data)
+    {
+        data = [data stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
+        data = [data stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+        data = [data stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
+        data = [data stringByReplacingOccurrencesOfString:@"&apos;" withString:@"'"];
+        data = [data stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
+    }
 
 	NSMutableArray *components = [NSMutableArray array];
     NSInteger last_position = 0;
@@ -1183,7 +1189,8 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 
     while (!scanner.isAtEnd)
     {
-        int tagStartPosition = scanner.scanLocation;
+        // Get position of scanner, used to check if <p> tags are at the start of the text
+        NSInteger tagStartPosition = scanner.scanLocation;
 
         // Capture tag text
 		[scanner scanUpToString:@"<" intoString:NULL];
