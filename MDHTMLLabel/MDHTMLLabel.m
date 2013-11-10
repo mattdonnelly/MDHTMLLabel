@@ -350,7 +350,10 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
     {
         if (match.resultType == NSTextCheckingTypeLink)
         {
-            if (match.range.location > 6 && ![[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
+            // if the URL location is greater than 6 (enough space for an anchor tag) and there's a 'href' before it, or if there's a closing anchor tag
+            // after it, then we dont wrap the URL in anchor tags
+            if (!(match.range.location > 6 && [[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
+                && (![[text substringWithRange:match.range] rangeOfString:@"a>"].length > 0))
             {
                 text = [text stringByReplacingCharactersInRange:match.range
                                                      withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString]];
