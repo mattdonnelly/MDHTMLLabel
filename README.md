@@ -7,6 +7,7 @@ It provides:
 
 - Link interaction
 - Auto-detection of URLs not wrapped in anchor tags
+- Font tag support
 - Bold and italic text styles
 - Color and stroke styles
 - Indentation, kerning and line spacing settings
