@@ -63,7 +63,15 @@ It will also detect any URLs inside the text that aren't wrapped in anchor tags 
 
 ### Customizing Appearence
 
-Changing the appearence of MDHTMLLabel is the as how you would go about doing it for UILabel, however it also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `selectedLinkAttributes` property.
+Changing the appearence of MDHTMLLabel can be done similarly to UILabel, but with many more features. Inline styling can be done using [HTML font tags](http://www.w3schools.com/tags/tag_font.asp) which allows you use different combinations of fonts, colors and sizes throughout the text. Changing fonts is done using the `face` attribute and must be set to a string that's interpretable by `+UIFont fontWithName:`.
+
+Here's an example of how it's used in the demo app. 
+
+```objective-c
+NSString *const kDemoText = @"... <font face='Didot-Italic' size='18'>customise</font>  ..."
+```
+
+MDHTMLLabel also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `selectedLinkAttributes` property.
 
 ```objective-c
 MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] initWithFrame:frame];
