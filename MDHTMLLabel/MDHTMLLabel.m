@@ -37,6 +37,8 @@ NSString *const MDHTMLLabelAttributeFontStyleNormalName = @"MDHTMLLabelAttribute
 NSString *const MDHTMLLabelAttributeFontStyleBoldName = @"MDHTMLLabelAttributeFontStyleBold";
 NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttributeFontStyleItalic";
 
+const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
+
 #pragma mark - MDHTMLLabelButton
 
 @interface MDHTMLLabelButton : UIButton
@@ -262,7 +264,7 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 	self.backgroundColor = [UIColor clearColor];
     self.multipleTouchEnabled = YES;
 
-	self.font = [UIFont systemFontOfSize:16];
+	self.font = [UIFont systemFontOfSize:kMDHTMLLabelDefaultFontSize];
 	self.textColor = [UIColor blackColor];
 	self.text = @"";
 	self.textAlignment = NSTextAlignmentLeft;
@@ -911,7 +913,7 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
                  atPosition:(NSInteger)position
                  withLength:(NSInteger)length
 {
-	for (NSString *key in attributes)
+	for (NSString *key in attributes.allKeys)
 	{
 		id value = attributes[key];
 
@@ -920,7 +922,29 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
             value = [value stringByReplacingOccurrencesOfString:@"'" withString:@""];
         }
 
-		if ([key isEqualToString:MDHTMLLabelAttributeColorName])
+        if ([key caseInsensitiveCompare:@"face"] == NSOrderedSame)
+        {
+            CGFloat size = kMDHTMLLabelDefaultFontSize;
+
+            if (attributes[@"size"])
+            {
+                size = [attributes[@"size"] floatValue];
+            }
+
+            UIFont *font = [UIFont fontWithName:value size:size];
+
+            if (font)
+            {
+                [attributes setValue:font forKey:MDHTMLLabelAttributeFontName];
+            }
+        }
+        else if ([key caseInsensitiveCompare:@"face"] == NSOrderedSame && !attributes[@"face"] && !attributes[@"FACE"])
+        {
+            CGFloat size = [attributes[@"size"] floatValue];
+            UIFont *font = [UIFont systemFontOfSize:size];
+            [attributes setValue:font forKey:MDHTMLLabelAttributeFontName];
+        }
+		else if ([key isEqualToString:MDHTMLLabelAttributeColorName] || [key caseInsensitiveCompare:@"color"] == NSOrderedSame)
 		{
 			[self applyColor:value toText:text atPosition:position withLength:length];
 		}
@@ -1264,6 +1288,8 @@ NSString *const MDHTMLLabelAttributeFontStyleItalicName = @"MDHTMLLabelAttribute
 						NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
 						value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
 						value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
+                        value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
+						value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
 
 						[attributes setObject:value forKey:key];
 					}
