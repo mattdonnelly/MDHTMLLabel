@@ -31,9 +31,9 @@ static const CGFloat kPadding = 10.0;
 NSString *const kDemoText =
 @"<a href='http://github.com/mattdonnelly/MDHTMLLabel'>MDHTMLLabel</a> is a lightweight, easy to \
 use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost <i>exactly</i> the \
-same as <b>UILabel</b>, allows you to fully customise its appearence with added features thanks to \
-<b>CoreText</b> and lets you handle when a user taps or holds down a link in the label unlike many \
-similar libraries.";
+same as <b>UILabel</b>, allows you to fully <font face='Didot-Italic' size='18'>customise</font> its \
+appearence with added features thanks to <b>CoreText</b> and lets you handle when a user taps or \
+holds down a link in the label unlike many similar libraries.";
 
 @interface DemoViewController () <MDHTMLLabelDelegate>
 
