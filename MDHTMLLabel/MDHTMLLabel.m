@@ -736,7 +736,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     CGFloat paragraphSpacing = 0.0;
 	CGFloat paragraphSpacingBefore = 0.0;
 
-    CTTextAlignment textAlignment = (CTTextAlignment)_textAlignment;
+    CTTextAlignment textAlignment = NSTextAlignmentToCTTextAlignment(_textAlignment);
 	CTLineBreakMode lineBreakMode = (CTLineBreakMode)_lineBreakMode;
 
     CGFloat lineSpacing = _lineSpacing;
