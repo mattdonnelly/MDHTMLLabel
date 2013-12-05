@@ -938,7 +938,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
                 [attributes setValue:font forKey:MDHTMLLabelAttributeFontName];
             }
         }
-        else if ([key caseInsensitiveCompare:@"face"] == NSOrderedSame && !attributes[@"face"] && !attributes[@"FACE"])
+        else if ([key caseInsensitiveCompare:@"size"] == NSOrderedSame && !attributes[@"face"] && !attributes[@"FACE"])
         {
             CGFloat size = [attributes[@"size"] floatValue];
             UIFont *font = [UIFont systemFontOfSize:size];
