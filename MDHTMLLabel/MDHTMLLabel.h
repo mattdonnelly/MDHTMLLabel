@@ -70,6 +70,7 @@ extern NSString *const MDHTMLLabelAttributeFontStyleItalicName;
 @property (nonatomic, assign) CGFloat shadowRadius;
 
 @property (nonatomic, assign) CGFloat preferredMaxLayoutWidth;
+@property (nonatomic, assign) NSUInteger numberOfLines;
 
 + (CGFloat)heightForHTMLString:(NSString *)htmlString
                       withFont:(UIFont *)font

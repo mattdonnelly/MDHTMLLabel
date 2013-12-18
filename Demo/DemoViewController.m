@@ -35,6 +35,13 @@ same as <b>UILabel</b>, allows you to fully <font face='Didot-Italic' size='18'>
 appearence with added features thanks to <b>CoreText</b> and lets you handle when a user taps or \
 holds down a link in the label unlike many similar libraries.";
 
+NSString *const kNormalDemoText =
+@"MDHTMLLabel is a lightweight, easy to \
+use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost exactly the \
+same as UILabel, allows you to fully customise its \
+appearence with added features thanks to CoreText and lets you handle when a user taps or \
+holds down a link in the label unlike many similar libraries.";
+
 @interface DemoViewController () <MDHTMLLabelDelegate>
 
 @end
@@ -50,6 +57,8 @@ holds down a link in the label unlike many similar libraries.";
     MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] init];
     htmlLabel.text = kDemoText;
     htmlLabel.delegate = self;
+    htmlLabel.numberOfLines = 0;
+    htmlLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     htmlLabel.preferredMaxLayoutWidth = self.view.frame.size.width - kPadding - kPadding;
     htmlLabel.linkAttributes = @{MDHTMLLabelAttributeColorName: [UIColor blueColor],
                                  MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:16.0f],
@@ -60,6 +69,15 @@ holds down a link in the label unlike many similar libraries.";
     htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
     htmlLabel.shadowRadius = 1.0;
     htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+    /*UILabel *htmlLabel = [[UILabel alloc] init];
+    htmlLabel.text = kNormalDemoText;
+    htmlLabel.numberOfLines = 0;
+    htmlLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
+    htmlLabel.preferredMaxLayoutWidth = self.view.frame.size.width - kPadding - kPadding;
+    htmlLabel.shadowColor = [UIColor whiteColor];
+    htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
+    htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;*/
 
     [self.view addSubview:htmlLabel];
 
@@ -73,7 +91,7 @@ holds down a link in the label unlike many similar libraries.";
                                                                       metrics:metrics
                                                                         views:views]];
 
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[topLayoutGuide]-(padding)-[htmlLabel]-(padding)-|"
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[topLayoutGuide]-(padding)-[htmlLabel]"
                                                                       options:0
                                                                       metrics:metrics
                                                                         views:views]];
