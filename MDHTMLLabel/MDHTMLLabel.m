@@ -663,7 +663,10 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 					MDHTMLLabelButton *linkButton = [[MDHTMLLabelButton alloc] initWithFrame:CGRectMake(startOffset + origin.x, height, buttonWidth, ascent + descent)];
                     linkButton.backgroundColor = [UIColor clearColor];
                     linkButton.componentIndex = linkableComponents.componentIndex;
-                    linkButton.URL = [NSURL URLWithString:[linkableComponents.attributes objectForKey:@"href"]];
+
+                    NSString *attributeURL = [linkableComponents.attributes objectForKey:@"href"];
+                    attributeURL = [attributeURL stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+                    linkButton.URL = [NSURL URLWithString:attributeURL];
 
 					[linkButton addTarget:self action:@selector(linkTouchDown:) forControlEvents:UIControlEventTouchDown];
 					[linkButton addTarget:self action:@selector(linkTouchUpOutside:) forControlEvents:UIControlEventTouchUpOutside];
