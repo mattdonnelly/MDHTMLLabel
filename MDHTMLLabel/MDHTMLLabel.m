@@ -351,23 +351,27 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 {
     NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
 
-    NSArray *matches = [detector matchesInString:text
-                                         options:0
-                                           range:NSMakeRange(0, text.length)];
+    NSTextCheckingResult *match = [detector firstMatchInString:text
+                                                       options:0
+                                                         range:NSMakeRange(9, text.length - 9)];
 
-    for (NSTextCheckingResult *match in matches)
+    while (match != nil && match.range.location != NSNotFound)
     {
         if (match.resultType == NSTextCheckingTypeLink)
         {
-            // if the URL location is greater than 6 (enough space for an anchor tag) and there's a 'href' before it, or if there's a closing anchor tag
-            // after it, then we dont wrap the URL in anchor tags
-            if (!(match.range.location > 6 && [[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
+            // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
+            if (!([[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
                 && (![[text substringWithRange:match.range] rangeOfString:@"a>"].length > 0))
             {
                 text = [text stringByReplacingCharactersInRange:match.range
                                                      withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString]];
             }
         }
+
+        match = [detector firstMatchInString:text
+                                     options:0
+                                       range:NSMakeRange(match.range.location + match.range.length,
+                                                         text.length - (match.range.location + match.range.length + 9))];
     }
 
     return text;
