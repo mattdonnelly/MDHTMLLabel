@@ -353,14 +353,14 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 
     NSTextCheckingResult *match = [detector firstMatchInString:text
                                                        options:0
-                                                         range:NSMakeRange(9, text.length - 9)];
+                                                         range:NSMakeRange(0, text.length)];
 
     while (match != nil && match.range.location != NSNotFound)
     {
         if (match.resultType == NSTextCheckingTypeLink)
         {
             // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
-            if (!([[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
+            if (!(match.range.location >= 9 && [[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
                 && (![[text substringWithRange:match.range] rangeOfString:@"a>"].length > 0))
             {
                 text = [text stringByReplacingCharactersInRange:match.range
@@ -371,7 +371,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
         match = [detector firstMatchInString:text
                                      options:0
                                        range:NSMakeRange(match.range.location + match.range.length,
-                                                         text.length - (match.range.location + match.range.length + 9))];
+                                                         text.length - (match.range.location + match.range.length))];
     }
 
     return text;
