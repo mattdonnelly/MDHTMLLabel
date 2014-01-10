@@ -137,14 +137,14 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 @property (nonatomic, copy) NSString *plainText;
 
 - (instancetype)initWithStyleComponents:(NSMutableArray *)styleComponents
-                             plainText:(NSString *)plainText;
+                              plainText:(NSString *)plainText;
 
 @end
 
 @implementation MDHTMLExtractedStyle
 
 - (instancetype)initWithStyleComponents:(NSMutableArray *)styleComponents
-                             plainText:(NSString *)plainText
+                              plainText:(NSString *)plainText
 {
     self = [super init];
 
@@ -161,21 +161,25 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 
 @interface MDHTMLLabel ()
 
+@property (nonatomic, assign) CTFramesetterRef framesetter;
+@property (nonatomic, assign) BOOL needsFramesetter;
+
+@property (nonatomic, strong) NSAttributedString *renderedAttributedText;
+
 @property (nonatomic, copy) NSString *plainText;
 
 @property (nonatomic, strong) NSMutableArray *styleComponents;
 @property (nonatomic, strong) NSMutableArray *highlightedStyleComponents;
 
-@property (nonatomic, assign) CGSize contentSize;
+@property (nonatomic, strong) NSMutableArray *links;
 
 @property (nonatomic, assign) NSInteger selectedLinkComponentIndex;
 @property (nonatomic, assign) BOOL highlighted;
 
-- (MDHTMLExtractedStyle *)extractStyleFromText:(NSString *)data;
+- (void)setNeedsFramesetter;
 
 - (NSString *)detectURLsInText:(NSString *)text;
-
-- (void)render;
+- (MDHTMLExtractedStyle *)extractStyleFromText:(NSString *)data;
 
 - (void)applyItalicStyleToText:(CFMutableAttributedStringRef)text
                     atPosition:(NSInteger)position
@@ -222,6 +226,8 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 @end
 
 @implementation MDHTMLLabel
+
+@synthesize framesetter = _framesetter;
 
 - (id)init
 {
@@ -275,20 +281,24 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     self.shadowColor = nil;
     self.shadowOffset = CGSizeZero;
     self.shadowRadius = 1.0;
+    self.links = [NSMutableArray array];
+    [self needsFramesetter];
 }
 
-#pragma mark - Setters
+#pragma mark - Accessors
 
 - (void)setFrame:(CGRect)frame
 {
     [super setFrame:frame];
 
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
 }
 
 - (void)setFont:(UIFont *)font
 {
     _font = font;
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -296,6 +306,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 - (void)setLineSpacing:(CGFloat)lineSpacing
 {
     _lineSpacing = lineSpacing;
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -303,6 +314,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 - (void)setTextAlignment:(NSTextAlignment)textAlignment
 {
 	_textAlignment = textAlignment;
+    [self setNeedsFramesetter];
 	[self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -310,6 +322,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 - (void)setLineBreakMode:(NSLineBreakMode)lineBreakMode
 {
 	_lineBreakMode = lineBreakMode;
+    [self setNeedsFramesetter];
 	[self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -317,6 +330,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 - (void)setNumberOfLines:(NSUInteger)numberOfLines
 {
     _numberOfLines = numberOfLines;
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -326,6 +340,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     if (highlighted != _highlighted)
     {
         _highlighted = highlighted;
+        [self setNeedsFramesetter];
         [self setNeedsDisplay];
         [self invalidateIntrinsicContentSize];
     }
@@ -333,7 +348,9 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 
 - (void)setText:(NSString *)text
 {
-	_text = [text stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
+    _text = [text copy];
+
+    _text = [_text stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
 
     _text = [self detectURLsInText:_text];
 
@@ -341,39 +358,56 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     self.styleComponents = component.styleComponents;
     self.plainText = component.plainText;
 
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
+}
+
+- (void)setNeedsFramesetter
+{
+    _needsFramesetter = YES;
+
+    self.renderedAttributedText = nil;
+}
+
+- (CTFramesetterRef)framesetter
+{
+    if (!_framesetter || _needsFramesetter)
+    {
+        @synchronized(self)
+        {
+            CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)self.renderedAttributedText);
+            self.framesetter = framesetter;
+            _needsFramesetter = NO;
+
+            if (framesetter)
+            {
+                CFRelease(framesetter);
+            }
+        }
+    }
+
+    return _framesetter;
+}
+
+- (void)setFramesetter:(CTFramesetterRef)framesetter
+{
+    CTFramesetterRef oldFramesetter = _framesetter;
+    _framesetter = framesetter;
+    if (_framesetter)
+    {
+        CFRetain(_framesetter);
+    }
+    if (oldFramesetter)
+    {
+        CFRelease(oldFramesetter);
+    }
 }
 
 #pragma mark - Data Detection
 
 - (NSString *)detectURLsInText:(NSString *)text
 {
-    NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
-
-    NSTextCheckingResult *match = [detector firstMatchInString:text
-                                                       options:0
-                                                         range:NSMakeRange(0, text.length)];
-
-    while (match != nil && match.range.location != NSNotFound)
-    {
-        if (match.resultType == NSTextCheckingTypeLink)
-        {
-            // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
-            if (!(match.range.location >= 9 && [[text substringWithRange:NSMakeRange(match.range.location-6, 4)] isEqualToString:@"href"])
-                && (![[text substringWithRange:match.range] rangeOfString:@"a>"].length > 0))
-            {
-                text = [text stringByReplacingCharactersInRange:match.range
-                                                     withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString]];
-            }
-        }
-
-        match = [detector firstMatchInString:text
-                                     options:0
-                                       range:NSMakeRange(match.range.location + match.range.length,
-                                                         text.length - (match.range.location + match.range.length))];
-    }
-
     return text;
 }
 
@@ -388,30 +422,186 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     label.font = font;
     label.preferredMaxLayoutWidth = preferredMaxLayoutWidth;
 
-    return label.contentSize.height;
+    return label.intrinsicContentSize.height;
 }
 
-- (CGSize)contentSize
+- (NSAttributedString *)renderedAttributedText
 {
-	[self render];
-    [self invalidateIntrinsicContentSize];
+    if (!_renderedAttributedText)
+    {
+        // Create attributed string ref for text
+        CFMutableAttributedStringRef attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
+        CFAttributedStringReplaceString (attrString, CFRangeMake(0, 0), (__bridge CFStringRef)_plainText);
 
-    return _contentSize;
+        // Apply text color to text
+        CFMutableDictionaryRef styleDict = CFDictionaryCreateMutable(0, 0, 0, 0);
+        CFDictionaryAddValue(styleDict, kCTForegroundColorAttributeName, _textColor.CGColor);
+        CFAttributedStringSetAttributes(attrString, CFRangeMake( 0, CFAttributedStringGetLength(attrString)), styleDict, 0);
+
+        CFRelease(styleDict);
+
+        // Apply default paragraph text style
+        [self applyParagraphStyleToText:attrString attributes:nil atPosition:0 withLength:CFAttributedStringGetLength(attrString)];
+
+        // Apply font to text
+        CTFontRef font = CTFontCreateWithName ((__bridge CFStringRef)_font.fontName, _font.pointSize, NULL);
+        CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, font);
+
+        CFRelease(font);
+
+        NSMutableArray *styleComponents = nil;
+
+        if (self.highlighted)
+        {
+            styleComponents = self.highlightedStyleComponents;
+        }
+        else
+        {
+            styleComponents = self.styleComponents;
+        }
+
+        // Loop through each component and apply its style to the text
+        for (MDHTMLComponent *component in styleComponents)
+        {
+            NSInteger index = [styleComponents indexOfObject:component];
+            component.componentIndex = index;
+
+            if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame)
+            {
+                [self applyItalicStyleToText:attrString
+                                  atPosition:component.position
+                                  withLength:component.text.length];
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"b"] == NSOrderedSame
+                     || [component.htmlTag caseInsensitiveCompare:@"strong"] == NSOrderedSame)
+            {
+                [self applyBoldStyleToText:attrString
+                                atPosition:component.position
+                                withLength:[component.text length]];
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"bi"] == NSOrderedSame)
+            {
+                [self applyBoldItalicStyleToText:attrString
+                                      atPosition:component.position
+                                      withLength:component.text.length];
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
+            {
+                if (self.selectedLinkComponentIndex == index)
+                {
+                    if (self.selectedLinkAttributes)
+                    {
+                        [self applyFontAttributes:self.selectedLinkAttributes
+                                           toText:attrString
+                                       atPosition:component.position
+                                       withLength:component.text.length];
+                    }
+                    else
+                    {
+                        [self applyColor:[UIColor redColor]
+                                  toText:attrString
+                              atPosition:component.position
+                              withLength:component.text.length];
+                    }
+                }
+                else
+                {
+                    if (self.linkAttributes)
+                    {
+                        [self applyFontAttributes:self.linkAttributes
+                                           toText:attrString
+                                       atPosition:component.position
+                                       withLength:component.text.length];
+                    }
+                    else
+                    {
+#ifdef __IPHONE_7_0
+                        [self applyColor:self.window.tintColor
+                                  toText:attrString
+                              atPosition:component.position
+                              withLength:component.text.length];
+#else
+                        [self applyColor:[UIColor blueColor]
+                                  toText:attrString
+                              atPosition:component.position
+                              withLength:component.text.length];
+#endif
+                    }
+                }
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame || [component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
+            {
+                if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame)
+                {
+                    [self applySingleUnderlineText:attrString
+                                        atPosition:component.position
+                                        withLength:[component.text length]];
+                }
+                else if ([component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
+                {
+                    [self applyDoubleUnderlineText:attrString
+                                        atPosition:component.position
+                                        withLength:[component.text length]];
+                }
+
+                if ([component.attributes objectForKey:MDHTMLLabelAttributeColorName])
+                {
+                    id value = [component.attributes objectForKey:MDHTMLLabelAttributeColorName];
+                    [self applyUnderlineColor:value
+                                       toText:attrString
+                                   atPosition:component.position
+                                   withLength:[component.text length]];
+                }
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"font"] == NSOrderedSame)
+            {
+                [self applyFontAttributes:component.attributes
+                                   toText:attrString
+                               atPosition:component.position
+                               withLength:[component.text length]];
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"p"] == NSOrderedSame)
+            {
+                [self applyParagraphStyleToText:attrString
+                                     attributes:component.attributes
+                                     atPosition:component.position
+                                     withLength:[component.text length]];
+            }
+            else if ([component.htmlTag caseInsensitiveCompare:@"center"] == NSOrderedSame)
+            {
+                [self applyCenterStyleToText:attrString
+                                  attributes:component.attributes
+                                  atPosition:component.position
+                                  withLength:[component.text length]];
+            }
+        }
+
+        self.renderedAttributedText = (__bridge NSAttributedString *)attrString;
+    }
+
+    return _renderedAttributedText;
 }
 
 - (CGSize)intrinsicContentSize
 {
-    return self.contentSize;
+    CGSize constraint;
+    if (_preferredMaxLayoutWidth)
+    {
+        constraint = CGSizeMake(_preferredMaxLayoutWidth, CGFLOAT_MAX);
+    }
+    else
+    {
+        constraint = CGSizeMake(self.frame.size.width, CGFLOAT_MAX);
+    }
+
+    CGSize suggestedFrameSize = CTFramesetterSuggestFrameSizeWithConstraints(self.framesetter, CFRangeMake(0, _plainText.length), nil, constraint, NULL);
+
+    return CGSizeMake(ceilf(suggestedFrameSize.width), ceilf(suggestedFrameSize.height));
 }
 
 - (void)drawRect:(CGRect)rect
 {
-	[self render];
-}
-
-- (void)render
-{
-    // Remove buttons from last render
+	// Remove buttons from last render
 	if (_selectedLinkComponentIndex == -1)
 	{
 		for (id view in [self subviews])
@@ -423,187 +613,21 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 		}
 	}
 
-    if (!_plainText)
-    {
-        return;
-    }
-
     CGContextRef context = UIGraphicsGetCurrentContext();
 
-    if (context != NULL)
-    {
-        CGContextSetTextMatrix(context, CGAffineTransformIdentity);
-        CGAffineTransform flipVertical = CGAffineTransformMake(1, 0, 0, -1, 0, self.frame.size.height);
-        CGContextConcatCTM(context, flipVertical);
+    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+    CGAffineTransform flipVertical = CGAffineTransformMake(1, 0, 0, -1, 0, self.frame.size.height);
+    CGContextConcatCTM(context, flipVertical);
 
-        if (_shadowColor)
-        {
-            CGContextSetShadowWithColor(context, _shadowOffset, _shadowRadius, _shadowColor.CGColor);
-        }
-        else if (!CGSizeEqualToSize(_shadowOffset, CGSizeZero))
-        {
-            CGContextSetShadow(context, _shadowOffset, _shadowRadius);
-        }
+    if (_shadowColor)
+    {
+        CGContextSetShadowWithColor(context, _shadowOffset, _shadowRadius, _shadowColor.CGColor);
+    }
+    else if (!CGSizeEqualToSize(_shadowOffset, CGSizeZero))
+    {
+        CGContextSetShadow(context, _shadowOffset, _shadowRadius);
     }
 
-    // Create attributed string ref for text
-	CFStringRef string = (__bridge CFStringRef)_plainText;
-	CFMutableAttributedStringRef attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
-	CFAttributedStringReplaceString (attrString, CFRangeMake(0, 0), string);
-
-    // Apply text color to text
-	CFMutableDictionaryRef styleDict = CFDictionaryCreateMutable(0, 0, 0, 0);
-	CFDictionaryAddValue(styleDict, kCTForegroundColorAttributeName, _textColor.CGColor);
-	CFAttributedStringSetAttributes(attrString, CFRangeMake( 0, CFAttributedStringGetLength(attrString)), styleDict, 0);
-
-    CFRelease(styleDict);
-
-    // Apply default paragraph text style
-	styleDict = CFDictionaryCreateMutable(0, 0, 0, 0);
-	[self applyParagraphStyleToText:attrString attributes:nil atPosition:0 withLength:CFAttributedStringGetLength(attrString)];
-
-    // Apply font to text
-	CTFontRef font = CTFontCreateWithName ((__bridge CFStringRef)_font.fontName, _font.pointSize, NULL);
-	CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, font);
-
-	NSMutableArray *links = [NSMutableArray array];
-	NSMutableArray *styleComponents = nil;
-
-    if (self.highlighted)
-    {
-        styleComponents = self.highlightedStyleComponents;
-    }
-    else
-    {
-        styleComponents = self.styleComponents;
-    }
-
-    // Loop through each component and apply its style to the text
-	for (MDHTMLComponent *component in styleComponents)
-	{
-		NSInteger index = [styleComponents indexOfObject:component];
-		component.componentIndex = index;
-
-		if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame)
-		{
-			[self applyItalicStyleToText:attrString
-                              atPosition:component.position
-                              withLength:component.text.length];
-		}
-		else if ([component.htmlTag caseInsensitiveCompare:@"b"] == NSOrderedSame
-                 || [component.htmlTag caseInsensitiveCompare:@"strong"] == NSOrderedSame)
-		{
-			[self applyBoldStyleToText:attrString
-                            atPosition:component.position
-                            withLength:[component.text length]];
-		}
-        else if ([component.htmlTag caseInsensitiveCompare:@"bi"] == NSOrderedSame)
-        {
-            [self applyBoldItalicStyleToText:attrString
-                                  atPosition:component.position
-                                  withLength:component.text.length];
-        }
-		else if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
-		{
-			if (self.selectedLinkComponentIndex == index)
-			{
-				if (self.selectedLinkAttributes)
-				{
-					[self applyFontAttributes:self.selectedLinkAttributes
-                                       toText:attrString
-                                   atPosition:component.position
-                                   withLength:component.text.length];
-				}
-				else
-				{
-                    [self applyColor:[UIColor redColor]
-                              toText:attrString
-                          atPosition:component.position
-                          withLength:component.text.length];
-				}
-			}
-			else
-			{
-				if (self.linkAttributes)
-				{
-					[self applyFontAttributes:self.linkAttributes
-                                       toText:attrString
-                                   atPosition:component.position
-                                   withLength:component.text.length];
-				}
-				else
-				{
-                    #ifdef __IPHONE_7_0
-                        [self applyColor:self.window.tintColor
-                                  toText:attrString
-                              atPosition:component.position
-                              withLength:component.text.length];
-                    #else
-                        [self applyColor:[UIColor blueColor]
-                                  toText:attrString
-                              atPosition:component.position
-                              withLength:component.text.length];
-                    #endif
-				}
-			}
-
-			NSString *hrefString = [component.attributes objectForKey:@"href"];
-			hrefString = [hrefString stringByReplacingOccurrencesOfString:@"'" withString:@""];
-			component.attributes[@"href"] = hrefString;
-
-			[links addObject:component];
-		}
-		else if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame || [component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
-		{
-			if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame)
-			{
-				[self applySingleUnderlineText:attrString
-                                    atPosition:component.position
-                                    withLength:[component.text length]];
-			}
-			else if ([component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
-			{
-				[self applyDoubleUnderlineText:attrString
-                                    atPosition:component.position
-                                    withLength:[component.text length]];
-			}
-
-			if ([component.attributes objectForKey:MDHTMLLabelAttributeColorName])
-			{
-				id value = [component.attributes objectForKey:MDHTMLLabelAttributeColorName];
-				[self applyUnderlineColor:value
-                                   toText:attrString
-                               atPosition:component.position
-                               withLength:[component.text length]];
-			}
-		}
-		else if ([component.htmlTag caseInsensitiveCompare:@"font"] == NSOrderedSame)
-		{
-			[self applyFontAttributes:component.attributes
-                               toText:attrString
-                           atPosition:component.position
-                           withLength:[component.text length]];
-		}
-		else if ([component.htmlTag caseInsensitiveCompare:@"p"] == NSOrderedSame)
-		{
-			[self applyParagraphStyleToText:attrString
-                                 attributes:component.attributes
-                                 atPosition:component.position
-                                 withLength:[component.text length]];
-		}
-		else if ([component.htmlTag caseInsensitiveCompare:@"center"] == NSOrderedSame)
-		{
-			[self applyCenterStyleToText:attrString
-                              attributes:component.attributes
-                              atPosition:component.position
-                              withLength:[component.text length]];
-		}
-	}
-
-    // Create frame to set attributed string in
-    CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attrString);
-
-	CGMutablePathRef path = CGPathCreateMutable();
 
     CGRect bounds;
     if (_preferredMaxLayoutWidth)
@@ -615,56 +639,42 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
         bounds = CGRectMake(0.0, 0.0, self.frame.size.width, self.frame.size.height);
     }
 
-	CGPathAddRect(path, NULL, bounds);
+    CGMutablePathRef path = CGPathCreateMutable();
+    CGPathAddRect(path, NULL, bounds);
 
-    CTFrameRef frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
-
-	CFRange range;
-    CGSize constraint;
-    if (_preferredMaxLayoutWidth)
-    {
-        constraint = CGSizeMake(_preferredMaxLayoutWidth, CGFLOAT_MAX);
-    }
-    else
-    {
-        constraint = CGSizeMake(self.frame.size.width, CGFLOAT_MAX);
-    }
-
-    // Update content size
-    CGSize suggestedFrameSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, _plainText.length), nil, constraint, &range);
-    self.contentSize = CGSizeMake(ceilf(suggestedFrameSize.width), ceilf(suggestedFrameSize.height));
+    CTFrameRef frame = CTFramesetterCreateFrame(self.framesetter, CFRangeMake(0, 0), path, NULL);
 
     // Create buttons for link components
-	if (_selectedLinkComponentIndex == -1)
-	{
-		for (MDHTMLComponent *linkableComponents in links)
-		{
-			CGFloat height = 0.0;
+    if (_selectedLinkComponentIndex == -1)
+    {
+        for (MDHTMLComponent *linkableComponents in _links)
+        {
+            CGFloat height = 0.0;
 
-			CFArrayRef frameLines = CTFrameGetLines(frame);
-			for (CFIndex i = 0; i < CFArrayGetCount(frameLines); i++)
-			{
-				CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(frameLines, i);
-				CFRange lineRange = CTLineGetStringRange(line);
+            CFArrayRef frameLines = CTFrameGetLines(frame);
+            for (CFIndex i = 0; i < CFArrayGetCount(frameLines); i++)
+            {
+                CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(frameLines, i);
+                CFRange lineRange = CTLineGetStringRange(line);
 
                 CGFloat ascent;
-				CGFloat descent;
-				CGFloat leading;
+                CGFloat descent;
+                CGFloat leading;
 
-				CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+                CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
 
                 CGPoint origin;
-				CTFrameGetLineOrigins(frame, CFRangeMake(i, 1), &origin);
+                CTFrameGetLineOrigins(frame, CFRangeMake(i, 1), &origin);
 
-				if ((linkableComponents.position < lineRange.location && linkableComponents.position + linkableComponents.text.length > (u_int16_t)(lineRange.location))
+                if ((linkableComponents.position < lineRange.location && linkableComponents.position + linkableComponents.text.length > (u_int16_t)(lineRange.location))
                     || (linkableComponents.position >= lineRange.location && linkableComponents.position < lineRange.location + lineRange.length))
-				{
-					CGFloat startOffset = CTLineGetOffsetForStringIndex(CFArrayGetValueAtIndex(frameLines, i), linkableComponents.position, NULL);
-					CGFloat endOffset = CTLineGetOffsetForStringIndex(CFArrayGetValueAtIndex(frameLines, i), linkableComponents.position + linkableComponents.text.length, NULL);
+                {
+                    CGFloat startOffset = CTLineGetOffsetForStringIndex(CFArrayGetValueAtIndex(frameLines, i), linkableComponents.position, NULL);
+                    CGFloat endOffset = CTLineGetOffsetForStringIndex(CFArrayGetValueAtIndex(frameLines, i), linkableComponents.position + linkableComponents.text.length, NULL);
 
-					CGFloat buttonWidth = endOffset - startOffset;
+                    CGFloat buttonWidth = endOffset - startOffset;
 
-					MDHTMLLabelButton *linkButton = [[MDHTMLLabelButton alloc] initWithFrame:CGRectMake(startOffset + origin.x, height, buttonWidth, ascent + descent)];
+                    MDHTMLLabelButton *linkButton = [[MDHTMLLabelButton alloc] initWithFrame:CGRectMake(startOffset + origin.x, height, buttonWidth, ascent + descent)];
                     linkButton.backgroundColor = [UIColor clearColor];
                     linkButton.componentIndex = linkableComponents.componentIndex;
 
@@ -672,9 +682,9 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
                     attributeURL = [attributeURL stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
                     linkButton.URL = [NSURL URLWithString:attributeURL];
 
-					[linkButton addTarget:self action:@selector(linkTouchDown:) forControlEvents:UIControlEventTouchDown];
-					[linkButton addTarget:self action:@selector(linkTouchUpOutside:) forControlEvents:UIControlEventTouchUpOutside];
-					[linkButton addTarget:self action:@selector(linkPressed:) forControlEvents:UIControlEventTouchUpInside];
+                    [linkButton addTarget:self action:@selector(linkTouchDown:) forControlEvents:UIControlEventTouchDown];
+                    [linkButton addTarget:self action:@selector(linkTouchUpOutside:) forControlEvents:UIControlEventTouchUpOutside];
+                    [linkButton addTarget:self action:@selector(linkPressed:) forControlEvents:UIControlEventTouchUpInside];
 
                     UILongPressGestureRecognizer *longPressGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self
                                                                                                                              action:@selector(linkLongPressed:)];
@@ -682,19 +692,17 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
                     [linkButton addGestureRecognizer:longPressGestureRecognizer];
 
                     [self addSubview:linkButton];
-				}
+                }
 
-				origin.y = self.frame.size.height - origin.y;
-				height = origin.y + descent + _lineSpacing;
-			}
-		}
-	}
+                origin.y = self.frame.size.height - origin.y;
+                height = origin.y + descent + _lineSpacing;
+            }
+        }
+    }
 
     // Draw Text
-    NSAttributedString *attributedString = (__bridge NSAttributedString *)attrString;
-
-    BOOL truncateLastLine = (CTFrameGetVisibleStringRange(frame).length < attributedString.length) &&
-                            (_lineBreakMode == NSLineBreakByTruncatingHead || _lineBreakMode == NSLineBreakByTruncatingMiddle || _lineBreakMode == NSLineBreakByTruncatingTail);
+    BOOL truncateLastLine = (CTFrameGetVisibleStringRange(frame).length < self.renderedAttributedText.length) &&
+    (_lineBreakMode == NSLineBreakByTruncatingHead || _lineBreakMode == NSLineBreakByTruncatingMiddle || _lineBreakMode == NSLineBreakByTruncatingTail);
 
     CFArrayRef lines = CTFrameGetLines(frame);
     NSUInteger lineCount = self.numberOfLines > 0 ? MIN(self.numberOfLines, CFArrayGetCount(lines)) : CFArrayGetCount(lines);
@@ -706,13 +714,15 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
     {
         CTLineRef line = CFArrayGetValueAtIndex(lines, i);
         CGPoint lineOrigin = origins[i];
+
         CGContextSetTextPosition(context, lineOrigin.x, lineOrigin.y);
 
         if (truncateLastLine && i == lineCount - 1)
         {
             CFRange lastLineRange = CTLineGetStringRange(line);
 
-            if (!(lastLineRange.length == 0 && lastLineRange.location == 0) && lastLineRange.location + lastLineRange.length < attributedString.length)
+            if (!(lastLineRange.length == 0 && lastLineRange.location == 0)
+                && lastLineRange.location + lastLineRange.length < self.renderedAttributedText.length)
             {
                 // Multiple lines, only use UILineBreakModeTailTruncation
                 if (_numberOfLines != 1) {
@@ -733,13 +743,14 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
                     truncationType = kCTLineTruncationEnd;
                 }
 
-                NSDictionary *attributes = [attributedString attributesAtIndex:attributedString.length-1 effectiveRange:NULL];
+                NSDictionary *attributes = [self.renderedAttributedText attributesAtIndex:self.renderedAttributedText.length-1 effectiveRange:NULL];
                 NSAttributedString *attributedTokenString = [[NSAttributedString alloc] initWithString:@"\u2026" attributes:attributes];
                 CTLineRef truncationToken = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)attributedTokenString);
 
                 // Append truncationToken to the string because if string isn't too long, CT wont add the truncationToken on it's own
                 // There is no change of a double truncationToken because CT only add the token if it removes characters (and the one we add will go first)
-                NSMutableAttributedString *truncationString = [[attributedString attributedSubstringFromRange:NSMakeRange((NSUInteger)lastLineRange.location, (NSUInteger)lastLineRange.length)] mutableCopy];
+                NSMutableAttributedString *truncationString = [[self.renderedAttributedText attributedSubstringFromRange:NSMakeRange((NSUInteger)lastLineRange.location,
+                                                                                                                                     (NSUInteger)lastLineRange.length)] mutableCopy];
                 if (lastLineRange.length > 0)
                 {
                     // Remove any newline at the end (we don't want newline space between the text and the truncation token).
@@ -793,11 +804,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
         }
     }
 
-    CFRelease(attrString);
-	CFRelease(font);
-	CFRelease(path);
-	CFRelease(styleDict);
-	CFRelease(framesetter);
+    CFRelease(path);
     CFRelease(frame);
 }
 
@@ -1194,7 +1201,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 
             CGColorRef color = CGColorCreate(rgbColorSpace, components);
             CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTForegroundColorAttributeName, color);
-            
+
             CFRelease(color);
             CGColorSpaceRelease(rgbColorSpace);
         }
@@ -1256,9 +1263,9 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
             NSArray *colorComponents = [self colorComponentsForHex:value];
 
             CGFloat components[] = {[[colorComponents objectAtIndex:0] floatValue],
-                                    [[colorComponents objectAtIndex:1] floatValue],
-                                    [[colorComponents objectAtIndex:2] floatValue],
-                                    [[colorComponents objectAtIndex:3] floatValue]};
+                [[colorComponents objectAtIndex:1] floatValue],
+                [[colorComponents objectAtIndex:2] floatValue],
+                [[colorComponents objectAtIndex:3] floatValue]};
 
             CGColorRef color = CGColorCreate(rgbColorSpace, components);
             CFAttributedStringSetAttribute(text, CFRangeMake(position, length),kCTUnderlineColorAttributeName, color);
@@ -1275,6 +1282,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 	MDHTMLLabelButton *button = (MDHTMLLabelButton *)sender;
     self.selectedLinkComponentIndex = button.componentIndex;
 
+    [self setNeedsFramesetter];
 	[self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -1283,6 +1291,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 {
 	self.selectedLinkComponentIndex = -1;
 
+    [self setNeedsFramesetter];
 	[self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 }
@@ -1292,6 +1301,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 	MDHTMLLabelButton *button = (MDHTMLLabelButton *)sender;
     self.selectedLinkComponentIndex = -1;
 
+    [self setNeedsFramesetter];
 	[self setNeedsDisplay];
     [self invalidateIntrinsicContentSize];
 
@@ -1308,6 +1318,7 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
         MDHTMLLabelButton *button = (MDHTMLLabelButton *)sender.view;
         self.selectedLinkComponentIndex = -1;
 
+        [self setNeedsFramesetter];
         [self setNeedsDisplay];
         [self invalidateIntrinsicContentSize];
 
@@ -1424,18 +1435,32 @@ const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
 					}
 				}
 			}
-
+            
             // Create component from tag and attributes, we'll know the text once we reach the closing tag
             MDHTMLComponent *component = [[MDHTMLComponent alloc] initWithString:nil htmlTag:htmlTag attributes:attributes];
 			component.position = position;
-
+            
+            if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
+            {
+                NSString *hrefString = [component.attributes objectForKey:@"href"];
+                hrefString = [hrefString stringByReplacingOccurrencesOfString:@"'" withString:@""];
+                component.attributes[@"href"] = hrefString;
+                
+                [_links addObject:component];
+            }
+            
 			[components addObject:component];
 		}
-
+        
 		last_position = position;
 	}
-
+    
     return [[MDHTMLExtractedStyle alloc] initWithStyleComponents:components plainText:data];
+}
+
+- (void)dealloc
+{
+    CFRelease(_framesetter);
 }
 
 @end
