@@ -28,19 +28,7 @@
 
 static const CGFloat kPadding = 10.0;
 
-NSString *const kDemoText =
-@"<a href='http://github.com/mattdonnelly/MDHTMLLabel'>MDHTMLLabel</a> is a lightweight, easy to \
-use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost <i>exactly</i> the \
-same as <b>UILabel</b>, allows you to fully <font face='Didot-Italic' size='18'>customise</font> its \
-appearence with added features thanks to <b>CoreText</b> and lets you handle when a user taps or \
-holds down a link in the label unlike many similar libraries.";
-
-NSString *const kNormalDemoText =
-@"MDHTMLLabel is a lightweight, easy to \
-use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost exactly the \
-same as UILabel, allows you to fully customise its \
-appearence with added features thanks to CoreText and lets you handle when a user taps or \
-holds down a link in the label unlike many similar libraries.";
+NSString *const kDemoText = @"<a href='http://github.com/mattdonnelly/MDHTMLLabel'>MDHTMLLabel</a> is a lightweight, easy to use replacement for <b>UILabel</b> which allows you to fully <font face='Didot-Italic' size='19'>customize</font> the appearence of the text using HTML tags (with a few added features thanks to <b>CoreText</b>), as well letting you handle whenever a user taps or holds down on link and automatically detecting ones not wrapper in anchor tags";
 
 @interface DemoViewController () <MDHTMLLabelDelegate>
 
@@ -55,29 +43,20 @@ holds down a link in the label unlike many similar libraries.";
     self.view.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
 
     MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] init];
-    htmlLabel.text = kDemoText;
+    htmlLabel.htmlText = kDemoText;
     htmlLabel.delegate = self;
     htmlLabel.numberOfLines = 0;
-    htmlLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-    htmlLabel.preferredMaxLayoutWidth = self.view.frame.size.width - kPadding - kPadding;
-    htmlLabel.linkAttributes = @{MDHTMLLabelAttributeColorName: [UIColor blueColor],
-                                 MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:16.0f],
-                                 MDHTMLLabelAttributeUnderlineName: @(1)};
-    htmlLabel.selectedLinkAttributes = @{MDHTMLLabelAttributeColorName: @"#ff0000",
-                                         MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:16.0f]};
     htmlLabel.shadowColor = [UIColor whiteColor];
     htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
-    htmlLabel.shadowRadius = 1.0;
     htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
-    /*UILabel *htmlLabel = [[UILabel alloc] init];
-    htmlLabel.text = kNormalDemoText;
-    htmlLabel.numberOfLines = 0;
-    htmlLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
-    htmlLabel.preferredMaxLayoutWidth = self.view.frame.size.width - kPadding - kPadding;
-    htmlLabel.shadowColor = [UIColor whiteColor];
-    htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
-    htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;*/
+    htmlLabel.linkAttributes = @{ NSForegroundColorAttributeName: [UIColor blueColor],
+                                  NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                                  NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
+
+    htmlLabel.activeLinkAttributes = @{ NSForegroundColorAttributeName: [UIColor redColor],
+                                        NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                                        NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
 
     [self.view addSubview:htmlLabel];
 
