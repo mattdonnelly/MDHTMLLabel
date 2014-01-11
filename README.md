@@ -1,20 +1,23 @@
 MDHTMLLabel
 ===========
 
-MDHTMLLabel is a lightweight, easy to use class for rendering text containing HTML tags on iOS 6.0+. It behaves almost exactly the same as UILabel and allows you to fully customize its appearence with added features thanks to CoreText. It also lets you handle when a user taps or holds down a link in the label unlike many similar libraries.
+MDHTMLLabel is a lightweight, easy to use replacement for UILabel which allows you to fully customize the appearence of the text using HTML (with a few added features thanks to CoreText), as well letting you handle whenever a user taps or holds down on link and automatically detect ones not wrapped in anchor tags.
 
-It provides:
+Features:
 
-- Link interaction
-- Auto-detection of URLs not wrapped in anchor tags
+- Fully style text using HTML
+- Link interaction handling
+- Automatic detection of URLs not wrapped in anchor tags
 - Font tag support
 - Bold and italic text styles
 - Color and stroke styles
+- Text shadows
 - Indentation, kerning and line spacing settings
-- Text shadow styles
+- Text insets
+- Support for iOS 6.0+
 
 <p align="center" >
-  <img src="https://raw.github.com/mattdonnelly/MDHTMLLabel/master/Screenshot.png" alt="MDHTMLLabel" title="MDHTMLLabel">
+  <img src="https://raw.github.com/mattdonnelly/MDHTMLLabel/master/Screenshot.png" alt="MDHTMLLabel" title="MDHTMLLabel" width="414" height="834">
 </p>
 
 ## Getting Started
@@ -45,7 +48,7 @@ Just import the header file and create an instance of MDHTMLLabel like you would
 {
     MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] initWithFrame:frame];
     htmlLabel.delegate = self;
-    htmlLabel.text = text;
+    htmlLabel.htmlText = htmlText;
 
     [self.view addSubview:htmlLabel];
 }
@@ -53,7 +56,7 @@ Just import the header file and create an instance of MDHTMLLabel like you would
 
 ### Link Interaction
 
-MDHTMLLabel automatically creates user interactable links inside the label to represent HTML anchor tags and allows you to detect when a user taps or holds down on a link by implementing an optional delgate. The delegate has two methods for you to implement: 
+MDHTMLLabel automatically creates user interactable links inside the label to represent HTML anchor tags and allows you to detect when a user taps or holds down on a link by implementing an optional delgate. The delegate has two methods for you to implement:
 
 ```objective-c
 - (void)HTMLLabel:(MDHTMLLabel *)label didSelectLinkWithURL:(NSURL *)URL
@@ -66,28 +69,27 @@ It will also detect any URLs inside the text that aren't wrapped in anchor tags 
 
 Changing the appearence of MDHTMLLabel can be done similarly to UILabel, but with many more features. Inline styling can be done using [HTML font tags](http://www.w3schools.com/tags/tag_font.asp) which allows you use different combinations of fonts, colors and sizes throughout the text. Changing fonts is done using the `face` attribute and must be set to a string that's interpretable by `+UIFont fontWithName:`.
 
-Here's an example of how it's used in the demo app. 
+Here's an example of how it's used in the demo app.
 
 ```objective-c
-NSString *const kDemoText = @"... <font face='Didot-Italic' size='18'>customise</font>  ..."
+NSString *const kDemoText = @"... <font face='Didot-Italic' size='19'>customise</font>  ..."
 ```
 
-MDHTMLLabel also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `selectedLinkAttributes` property.
+MDHTMLLabel also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `ativeLinkAttributes` property.
 
 ```objective-c
 MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] initWithFrame:frame];
 htmlLabel.delegate = self;
-htmlLabel.text = text;
+htmlLabel.htmlText = htmlText;
 
-htmlLabel.linkAttributes = @{MDHTMLLabelAttributeColorName: [UIColor blueColor],
-                             MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:14.0f],
-                             MDHTMLLabelAttributeUnderlineName: @(1)};
+htmlLabel.linkAttributes = @{ NSForegroundColorAttributeName: [UIColor blueColor],
+                              NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                              NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
 
-htmlLabel.selectedLinkAttributes = @{MDHTMLLabelAttributeColorName: @"#ff0000",
-                                     MDHTMLLabelAttributeFontName: [UIFont boldSystemFontOfSize:14.0f]};
+htmlLabel.activeLinkAttributes = @{ NSForegroundColorAttributeName: [UIColor redColor],
+                                    NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                                    NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
 ```
-
-See the header file for the complete list of attributes you can specify.
 
 ## Special Thanks
 

@@ -28,7 +28,7 @@
 
 static const CGFloat kPadding = 10.0;
 
-NSString *const kDemoText = @"<a href='http://github.com/mattdonnelly/MDHTMLLabel'>MDHTMLLabel</a> is a lightweight, easy to use replacement for <b>UILabel</b> which allows you to fully <font face='Didot-Italic' size='19'>customize</font> the appearence of the text using HTML tags (with a few added features thanks to <b>CoreText</b>), as well letting you handle whenever a user taps or holds down on link and automatically detecting ones not wrapper in anchor tags";
+NSString *const kDemoText = @"<a href='http://github.com/mattdonnelly/MDHTMLLabel'>MDHTMLLabel</a> is a lightweight, easy to use replacement for <b>UILabel</b> which allows you to fully <font face='Didot-Italic' size='19'>customize</font> the appearence of the text using HTML (with a few added features thanks to <b>CoreText</b>), as well letting you handle whenever a user taps or holds down on link and automatically detects ones not wrapped in anchor tags";
 
 @interface DemoViewController () <MDHTMLLabelDelegate>
 

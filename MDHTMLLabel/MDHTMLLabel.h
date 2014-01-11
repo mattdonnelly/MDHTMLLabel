@@ -60,7 +60,7 @@ typedef NS_ENUM(NSUInteger, MDHTMLLabelVerticalAlignment) {
 @end
 
 /** 
- `MDHTMLLabel` is a lightweight, easy to use replacement for `UILabel` which allows you to fully customize the appearence of the text using HTML tags.
+ `MDHTMLLabel` is a lightweight, easy to use replacement for `UILabel` which allows you to fully customize the appearence of the text using HTML.
 
 # Differences Between `MDHTMLLabel` and `UILabel`
 
