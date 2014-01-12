@@ -510,6 +510,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     }
 
     [self setNeedsDisplay];
+    [self invalidateIntrinsicContentSize];
 }
 
 - (CTFramesetterRef)framesetter
