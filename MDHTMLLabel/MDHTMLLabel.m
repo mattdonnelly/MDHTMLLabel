@@ -31,8 +31,6 @@
 
 static CGFloat const MDFLOAT_MAX = 100000;
 
-const CGFloat kMDHTMLLabelDefaultFontSize = 16.0;
-
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
 const NSTextAlignment MDTextAlignmentLeft = NSTextAlignmentLeft;
 const NSTextAlignment MDTextAlignmentCenter = NSTextAlignmentCenter;
@@ -66,7 +64,6 @@ const UITextAlignment MDLineBreakByTruncatingTail = NSLineBreakByTruncatingTail;
 typedef UITextAlignment MDTextAlignment;
 typedef UILineBreakMode MDLineBreakMode;
 #endif
-
 
 static inline CTTextAlignment CTTextAlignmentFromMDTextAlignment(MDTextAlignment alignment)
 {
@@ -227,30 +224,6 @@ static inline NSAttributedString * NSAttributedStringByScalingFontSize(NSAttribu
     return mutableAttributedString;
 }
 
-static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(NSAttributedString *attributedString, UIColor *color)
-{
-    if (!color)
-    {
-        return attributedString;
-    }
-
-    NSMutableAttributedString *mutableAttributedString = [attributedString mutableCopy];
-    [mutableAttributedString enumerateAttribute:(NSString *)kCTForegroundColorFromContextAttributeName
-                                        inRange:NSMakeRange(0, [mutableAttributedString length])
-                                        options:0
-                                     usingBlock:^(id value, NSRange range, __unused BOOL *stop)
-    {
-        BOOL usesColorFromContext = (BOOL)value;
-        if (usesColorFromContext)
-        {
-            [mutableAttributedString setAttributes:[NSDictionary dictionaryWithObject:color forKey:(NSString *)kCTForegroundColorAttributeName] range:range];
-            [mutableAttributedString removeAttribute:(NSString *)kCTForegroundColorFromContextAttributeName range:range];
-        }
-    }];
-
-    return mutableAttributedString;
-}
-
 static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstraints(CTFramesetterRef framesetter,
                                                                                      NSAttributedString *attributedString,
                                                                                      CGSize size,
@@ -289,19 +262,6 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     return CGSizeMake(CGFloat_ceil(suggestedSize.width), CGFloat_ceil(suggestedSize.height));
 }
-
-#pragma mark - MDHTMLLabelButton
-
-@interface MDHTMLLabelButton : UIButton
-
-@property (nonatomic, assign) NSInteger componentIndex;
-@property (nonatomic) NSURL *URL;
-
-@end
-
-@implementation MDHTMLLabelButton
-
-@end
 
 #pragma mark - MDHTMLComponent
 
@@ -380,7 +340,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 @end
 
-#pragma mark - MDHTMLExtractedStyle
+#pragma mark - MDHTMLLabel
 
 @interface MDHTMLLabel ()
 
@@ -1250,7 +1210,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
         if ([key caseInsensitiveCompare:@"face"] == NSOrderedSame)
         {
-            CGFloat size = kMDHTMLLabelDefaultFontSize;
+            CGFloat size = self.font.pointSize;
 
             if (attributes[@"size"])
             {
