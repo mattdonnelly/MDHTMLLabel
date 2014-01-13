@@ -140,6 +140,11 @@ static inline UILineBreakMode UILineBreakModeFromMDLineBreakMode(MDLineBreakMode
 #endif
 }
 
+static inline CFRange CFRangeFromNSRange(NSRange range)
+{
+    return CFRangeMake(range.location, range.length);
+}
+
 static inline NSArray * CGColorComponentsForHex(NSString *hexColor)
 {
 	hexColor = [[hexColor stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
@@ -281,6 +286,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
          position:(NSInteger)position
        attributes:(NSMutableDictionary *)attributes;
 
+- (NSRange)range;
+
 @end
 
 @implementation MDHTMLComponent
@@ -315,6 +322,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     }
 
     return self;
+}
+
+- (NSRange)range
+{
+    return NSMakeRange(self.position, self.text.length);
 }
 
 - (NSString *)description
@@ -365,36 +377,29 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (NSAttributedString *)applyStylesToString:(NSString *)string;
 
 - (void)applyItalicStyleToText:(CFMutableAttributedStringRef)text
-                    atPosition:(NSInteger)position
-                    withLength:(NSInteger)length;
+                         range:(NSRange)range;
 
 - (void)applyBoldStyleToText:(CFMutableAttributedStringRef)text
-                  atPosition:(NSInteger)position
-                  withLength:(NSInteger)length;
+                       range:(NSRange)range;
 
 - (void)applyBoldItalicStyleToText:(CFMutableAttributedStringRef)text
-                        atPosition:(NSInteger)position
-                        withLength:(NSInteger)length;
+                             range:(NSRange)range;
 
 - (void)applyColor:(id)value
             toText:(CFMutableAttributedStringRef)text
-        atPosition:(NSInteger)position
-        withLength:(NSInteger)length;
+             range:(NSRange)range;
 
 - (void)applyUnderlineColor:(NSString *)value
                      toText:(CFMutableAttributedStringRef)text
-                 atPosition:(NSInteger)position
-                 withLength:(NSInteger)length;
+                      range:(NSRange)range;
 
 - (void)applyFontAttributes:(NSDictionary *)attributes
                      toText:(CFMutableAttributedStringRef)text
-                 atPosition:(NSInteger)position
-                 withLength:(NSInteger)length;
+                      range:(NSRange)range;
 
 - (void)applyParagraphStyleToText:(CFMutableAttributedStringRef)text
                        attributes:(NSMutableDictionary *)attributes
-                       atPosition:(NSInteger)position
-                       withLength:(NSInteger)length;
+                            range:(NSRange)range;
 
 @end
 
@@ -602,8 +607,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
             [self applyFontAttributes:mutableActiveLinkAttributes
                                toText:(__bridge CFMutableAttributedStringRef)mutableAttributedString
-                           atPosition:_activeLink.range.location
-                           withLength:_activeLink.range.length];
+                                range:_activeLink.range];
         }
 
         self.htmlAttributedText = mutableAttributedString;
@@ -871,7 +875,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     CFRelease(styleDict);
 
     // Apply default paragraph text style
-    [self applyParagraphStyleToText:attrString attributes:nil atPosition:0 withLength:CFAttributedStringGetLength(attrString)];
+    [self applyParagraphStyleToText:attrString attributes:nil range:NSMakeRange(0, string.length)];
+
 
     // Apply font to text
     CTFontRef font = CTFontCreateWithName ((__bridge CFStringRef)self.font.fontName, self.font.pointSize, NULL);
@@ -899,21 +904,18 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame)
         {
             [self applyItalicStyleToText:attrString
-                              atPosition:component.position
-                              withLength:component.text.length];
+                                   range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"b"] == NSOrderedSame
                  || [component.htmlTag caseInsensitiveCompare:@"strong"] == NSOrderedSame)
         {
             [self applyBoldStyleToText:attrString
-                            atPosition:component.position
-                            withLength:[component.text length]];
+                                 range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"bi"] == NSOrderedSame)
         {
             [self applyBoldItalicStyleToText:attrString
-                                  atPosition:component.position
-                                  withLength:component.text.length];
+                                       range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
         {
@@ -932,8 +934,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
             [self applyFontAttributes:mutableLinkAttributes
                                toText:attrString
-                           atPosition:component.position
-                           withLength:component.text.length];
+                                range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame || [component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
         {
@@ -953,30 +954,26 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                 id value = [component.attributes objectForKey:(NSString *)kCTForegroundColorAttributeName];
                 [self applyUnderlineColor:value
                                    toText:attrString
-                               atPosition:component.position
-                               withLength:[component.text length]];
+                                    range:component.range];
             }
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"font"] == NSOrderedSame)
         {
             [self applyFontAttributes:component.attributes
                                toText:attrString
-                           atPosition:component.position
-                           withLength:[component.text length]];
+                                range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"p"] == NSOrderedSame)
         {
             [self applyParagraphStyleToText:attrString
                                  attributes:component.attributes
-                                 atPosition:component.position
-                                 withLength:[component.text length]];
+                                      range:component.range];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"center"] == NSOrderedSame)
         {
             [self applyCenterStyleToText:attrString
                               attributes:component.attributes
-                              atPosition:component.position
-                              withLength:[component.text length]];
+                                   range:component.range];
         }
     }
 
@@ -986,8 +983,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)applyParagraphStyleToText:(CFMutableAttributedStringRef)text
                        attributes:(NSMutableDictionary *)attributes
-                       atPosition:(NSInteger)position
-                       withLength:(NSInteger)length
+                            range:(NSRange)range
 {
 	CFMutableDictionaryRef styleDict = ( CFDictionaryCreateMutable( (0), 0, (0), (0) ) );
 
@@ -1083,7 +1079,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	CTParagraphStyleRef paragraphRef = CTParagraphStyleCreate(settings, sizeof(settings) / sizeof(CTParagraphStyleSetting));
 	CFDictionaryAddValue(styleDict, kCTParagraphStyleAttributeName, paragraphRef);
 
-	CFAttributedStringSetAttributes(text, CFRangeMake(position, length), styleDict, 0);
+	CFAttributedStringSetAttributes(text, CFRangeFromNSRange(range), styleDict, 0);
 
 	CFRelease(paragraphRef);
     CFRelease(styleDict);
@@ -1091,8 +1087,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)applyCenterStyleToText:(CFMutableAttributedStringRef)text
                     attributes:(NSMutableDictionary *)attributes
-                    atPosition:(NSInteger)position
-                    withLength:(NSInteger)length
+                         range:(NSRange)range
 {
 	CFMutableDictionaryRef styleDict = CFDictionaryCreateMutable(0, 0, 0, 0) ;
 
@@ -1130,17 +1125,16 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	CTParagraphStyleRef paragraphRef = CTParagraphStyleCreate(settings, sizeof(settings) / sizeof(CTParagraphStyleSetting));
 	CFDictionaryAddValue(styleDict, kCTParagraphStyleAttributeName, paragraphRef);
 
-	CFAttributedStringSetAttributes( text, CFRangeMake(position, length), styleDict, 0 );
+	CFAttributedStringSetAttributes( text, CFRangeFromNSRange(range), styleDict, 0 );
 
 	CFRelease(paragraphRef);
     CFRelease(styleDict);
 }
 
 - (void)applyItalicStyleToText:(CFMutableAttributedStringRef)text
-                    atPosition:(NSInteger)position
-                    withLength:(NSInteger)length
+                         range:(NSRange)range
 {
-    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, position, kCTFontAttributeName, NULL);
+    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, range.location, kCTFontAttributeName, NULL);
     CTFontRef italicFontRef = CTFontCreateCopyWithSymbolicTraits(actualFontRef, 0.0, NULL, kCTFontItalicTrait, kCTFontItalicTrait);
 
     if (!italicFontRef)
@@ -1149,15 +1143,14 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         italicFontRef = CTFontCreateWithName ((__bridge CFStringRef)[font fontName], [font pointSize], NULL);
     }
 
-    CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTFontAttributeName, italicFontRef);
+    CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, italicFontRef);
 
     CFRelease(italicFontRef);
 }
 
 - (void)applyFontAttributes:(NSDictionary *)attributes
                      toText:(CFMutableAttributedStringRef)text
-                 atPosition:(NSInteger)position
-                 withLength:(NSInteger)length
+                      range:(NSRange)range
 {
 	for (NSString *key in attributes.allKeys)
 	{
@@ -1192,45 +1185,45 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
         else if ([key isEqualToString:(NSString *)kCTParagraphStyleAttributeName])
         {
-            CFAttributedStringSetAttribute(text, CFRangeMake(position, length),
+            CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range),
                                            kCTParagraphStyleAttributeName, (CTParagraphStyleRef)value);
         }
         else if ([key isEqualToString:NSParagraphStyleAttributeName])
         {
             NSMutableAttributedString *mutableText = [value mutableCopy];
-            [mutableText addAttribute:NSParagraphStyleAttributeName value:(NSParagraphStyle *)value range:NSMakeRange(position, length)];
+            [mutableText addAttribute:NSParagraphStyleAttributeName value:(NSParagraphStyle *)value range:range];
         }
 		else if ([key isEqualToString:(NSString *)kCTForegroundColorAttributeName]
                  || [key isEqualToString:NSForegroundColorAttributeName]
                  || [key caseInsensitiveCompare:@"color"] == NSOrderedSame)
 		{
-			[self applyColor:value toText:text atPosition:position withLength:length];
+			[self applyColor:value toText:text range:range];
 		}
 		else if ([key isEqualToString:(NSString *)kCTStrokeWidthAttributeName]
                  || [key isEqualToString:NSStrokeWidthAttributeName])
 		{
 			CFAttributedStringSetAttribute(text,
-                                           CFRangeMake(position, length),
+                                           CFRangeFromNSRange(range),
                                            kCTStrokeWidthAttributeName,
                                            (__bridge CFTypeRef)([attributes objectForKey:(NSString *)kCTStrokeWidthAttributeName]));
 		}
         else if ([key isEqualToString:(NSString *)kCTStrokeColorAttributeName]
                  || [key isEqualToString:NSStrokeColorAttributeName])
 		{
-			[self applyStrokeColor:value toText:text atPosition:position withLength:length];
+			[self applyStrokeColor:value toText:text range:range];
 		}
 		else if ([key isEqualToString:(NSString *)kCTKernAttributeName]
                  || [key isEqualToString:NSKernAttributeName])
 		{
 			CFAttributedStringSetAttribute(text,
-                                           CFRangeMake(position, length),
+                                           CFRangeFromNSRange(range),
                                            kCTKernAttributeName,
                                            (__bridge CFTypeRef)([attributes objectForKey:(NSString *)kCTKernAttributeName]));
 		}
 		else if ([key isEqualToString:(NSString *)kCTUnderlineStyleAttributeName]
                  || [key isEqualToString:NSUnderlineStyleAttributeName])
 		{
-            CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTUnderlineStyleAttributeName,  (__bridge CFNumberRef)value);
+            CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTUnderlineStyleAttributeName,  (__bridge CFNumberRef)value);
 		}
 	}
 
@@ -1239,7 +1232,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	if (font)
 	{
 		CTFontRef customFont = CTFontCreateWithName ((__bridge CFStringRef)font.fontName, font.pointSize, NULL);
-		CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTFontAttributeName, customFont);
+		CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, customFont);
 		CFRelease(customFont);
         return;
 	}
@@ -1249,16 +1242,15 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     if (font)
 	{
 		CTFontRef customFont = CTFontCreateWithName ((__bridge CFStringRef)font.fontName, font.pointSize, NULL);
-		CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTFontAttributeName, customFont);
+		CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, customFont);
 		CFRelease(customFont);
 	}
 }
 
 - (void)applyBoldStyleToText:(CFMutableAttributedStringRef)text
-                  atPosition:(NSInteger)position
-                  withLength:(NSInteger)length
+                       range:(NSRange)range
 {
-    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, position, kCTFontAttributeName, NULL);
+    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, range.location, kCTFontAttributeName, NULL);
     CTFontRef boldFontRef = CTFontCreateCopyWithSymbolicTraits(actualFontRef, 0.0, NULL, kCTFontBoldTrait, kCTFontBoldTrait);
 
     if (!boldFontRef)
@@ -1267,16 +1259,15 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         boldFontRef = CTFontCreateWithName((__bridge CFStringRef)font.fontName, self.font.pointSize, NULL);
     }
 
-    CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTFontAttributeName, boldFontRef);
+    CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, boldFontRef);
 
     CFRelease(boldFontRef);
 }
 
 - (void)applyBoldItalicStyleToText:(CFMutableAttributedStringRef)text
-                        atPosition:(NSInteger)position
-                        withLength:(NSInteger)length
+                             range:(NSRange)range
 {
-    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, position, kCTFontAttributeName, NULL);
+    CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, range.location, kCTFontAttributeName, NULL);
     CTFontRef boldItalicFontRef = CTFontCreateCopyWithSymbolicTraits(actualFontRef, 0.0, NULL, kCTFontBoldTrait | kCTFontItalicTrait , kCTFontBoldTrait | kCTFontItalicTrait);
 
     if (!boldItalicFontRef)
@@ -1287,20 +1278,19 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (boldItalicFontRef)
     {
-        CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTFontAttributeName, boldItalicFontRef);
+        CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, boldItalicFontRef);
         CFRelease(boldItalicFontRef);
     }
 }
 
 - (void)applyColor:(id)value
             toText:(CFMutableAttributedStringRef)text
-        atPosition:(NSInteger)position
-        withLength:(NSInteger)length
+             range:(NSRange)range
 {
     if ([value isKindOfClass:[UIColor class]])
     {
         UIColor *color = (UIColor *)value;
-        CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTForegroundColorAttributeName, color.CGColor);
+        CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTForegroundColorAttributeName, color.CGColor);
     }
     else if ([value isKindOfClass:[NSString class]])
     {
@@ -1321,7 +1311,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                 [[colorComponents objectAtIndex:3] floatValue]};
 
             CGColorRef color = CGColorCreate(rgbColorSpace, components);
-            CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTForegroundColorAttributeName, color);
+            CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTForegroundColorAttributeName, color);
 
             CFRelease(color);
             CGColorSpaceRelease(rgbColorSpace);
@@ -1331,13 +1321,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)applyStrokeColor:(id)value
                   toText:(CFMutableAttributedStringRef)text
-              atPosition:(NSInteger)position
-              withLength:(NSInteger)length
+                   range:(NSRange)range
 {
     if ([value isKindOfClass:[UIColor class]])
     {
         UIColor *color = (UIColor *)value;
-        CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTStrokeColorAttributeName, color.CGColor);
+        CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTStrokeColorAttributeName, color.CGColor);
     }
     else if ([value isKindOfClass:[NSString class]])
     {
@@ -1356,7 +1345,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             [[colorComponents objectAtIndex:3] floatValue]};
 
         CGColorRef color = CGColorCreate(rgbColorSpace, components);
-        CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTStrokeColorAttributeName, color);
+        CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTStrokeColorAttributeName, color);
 
         CFRelease(color);
         CGColorSpaceRelease(rgbColorSpace);
@@ -1365,12 +1354,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)applyUnderlineColor:(id)value
                      toText:(CFMutableAttributedStringRef)text
-                 atPosition:(NSInteger)position withLength:(NSInteger)length
+                      range:(NSRange)range
 {
     if ([value isKindOfClass:[UIColor class]])
     {
         UIColor *color = (UIColor *)value;
-        CFAttributedStringSetAttribute(text, CFRangeMake(position, length), kCTForegroundColorAttributeName, color.CGColor);
+        CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTForegroundColorAttributeName, color.CGColor);
     }
     else if ([value isKindOfClass:[NSString class]])
     {
@@ -1389,7 +1378,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                 [[colorComponents objectAtIndex:3] floatValue]};
 
             CGColorRef color = CGColorCreate(rgbColorSpace, components);
-            CFAttributedStringSetAttribute(text, CFRangeMake(position, length),kCTUnderlineColorAttributeName, color);
+            CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTUnderlineColorAttributeName, color);
             CGColorRelease(color);
             CGColorSpaceRelease(rgbColorSpace);
         }
