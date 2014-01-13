@@ -43,20 +43,21 @@ NSString *const kDemoText = @"<a href='http://github.com/mattdonnelly/MDHTMLLabe
     self.view.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
 
     MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] init];
-    htmlLabel.htmlText = kDemoText;
     htmlLabel.delegate = self;
     htmlLabel.numberOfLines = 0;
     htmlLabel.shadowColor = [UIColor whiteColor];
     htmlLabel.shadowOffset = CGSizeMake(0.0, 1.0);
     htmlLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
-    htmlLabel.linkAttributes = @{ NSForegroundColorAttributeName: [UIColor blueColor],
-                                  NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
-                                  NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
+    htmlLabel.linkAttributes = @{NSForegroundColorAttributeName: [UIColor blueColor],
+                                 NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                                 NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle)};
 
-    htmlLabel.activeLinkAttributes = @{ NSForegroundColorAttributeName: [UIColor redColor],
-                                        NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
-                                        NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) };
+    htmlLabel.activeLinkAttributes = @{NSForegroundColorAttributeName: [UIColor redColor],
+                                       NSFontAttributeName: [UIFont boldSystemFontOfSize:htmlLabel.font.pointSize],
+                                       NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle)};
+
+    htmlLabel.htmlText = kDemoText;
 
     [self.view addSubview:htmlLabel];
 

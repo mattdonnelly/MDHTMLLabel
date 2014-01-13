@@ -68,6 +68,8 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 
 - `lineBreakMode` - This property displays only the first line when the value is `NSLineBreakByTruncatingHead`, `NSLineBreakByTruncatingMiddle`, or `NSLineBreakByTruncatingTail`
 - `adjustsFontsizeToFitWidth` - This property is effective for any value of `numberOfLines` greater than zero.
+
+ @warning Any properties changed on the label after setting the text will not be reflected until a subsequent call to `setHtmlText:`. This is to say, order of operations matters in this case. For example, if the label text color is originally black when the text is set, changing the text color to red will have no effect on the display of the label until the text is set once again.
 */
 
 @interface MDHTMLLabel : UILabel

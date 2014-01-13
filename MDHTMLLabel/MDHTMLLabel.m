@@ -227,6 +227,30 @@ static inline NSAttributedString * NSAttributedStringByScalingFontSize(NSAttribu
     return mutableAttributedString;
 }
 
+static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(NSAttributedString *attributedString, UIColor *color)
+{
+    if (!color)
+    {
+        return attributedString;
+    }
+
+    NSMutableAttributedString *mutableAttributedString = [attributedString mutableCopy];
+    [mutableAttributedString enumerateAttribute:(NSString *)kCTForegroundColorFromContextAttributeName
+                                        inRange:NSMakeRange(0, [mutableAttributedString length])
+                                        options:0
+                                     usingBlock:^(id value, NSRange range, __unused BOOL *stop)
+    {
+        BOOL usesColorFromContext = (BOOL)value;
+        if (usesColorFromContext)
+        {
+            [mutableAttributedString setAttributes:[NSDictionary dictionaryWithObject:color forKey:(NSString *)kCTForegroundColorAttributeName] range:range];
+            [mutableAttributedString removeAttribute:(NSString *)kCTForegroundColorFromContextAttributeName range:range];
+        }
+    }];
+
+    return mutableAttributedString;
+}
+
 static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstraints(CTFramesetterRef framesetter,
                                                                                      NSAttributedString *attributedString,
                                                                                      CGSize size,
@@ -360,11 +384,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 @interface MDHTMLLabel ()
 
-@property (nonatomic, copy) NSAttributedString *htmlAttributedText;
-@property (nonatomic, copy) NSString *plainText;;
+@property (nonatomic, copy) NSString *plainText;
 
-@property (nonatomic, readonly) CTFramesetterRef framesetterRef;
-@property (nonatomic, readonly) NSAttributedString *renderedAttributedText;
+@property (nonatomic, copy) NSAttributedString *inactiveAttributedText;
+
+@property (nonatomic, assign) BOOL needsFramesetter;
 
 @property (nonatomic, strong) NSDataDetector *dataDetector;
 @property (nonatomic, strong) NSMutableArray *links;
@@ -377,6 +401,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (NSString *)detectURLsInText:(NSString *)text;
 - (void)extractStyleFromText:(NSString *)text;
+
+- (void)setNeedsFramesetter;
 
 - (NSAttributedString *)applyStylesToString:(NSString *)string;
 
@@ -415,6 +441,15 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 @end
 
 @implementation MDHTMLLabel
+{
+@private
+    NSAttributedString *_htmlAttributedText;
+    BOOL _needsFramesetter;
+    CTFramesetterRef _framesetter;
+    CTFramesetterRef _highlightFramesetter;
+}
+
+#pragma mark - Initialization
 
 - (id)init
 {
@@ -455,6 +490,14 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     self.inactiveLinkAttributes = [NSDictionary dictionary];
 }
 
+- (void)dealloc
+{
+    if (_framesetter)
+    {
+        CFRelease(_framesetter);
+    }
+}
+
 #pragma mark - Accessors
 
 - (void)setText:(NSString *)text
@@ -484,15 +527,26 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         _htmlText = [self detectURLsInText:_htmlText];
 
         [self extractStyleFromText:_htmlText];
-
-        self.htmlAttributedText = [[NSAttributedString alloc] initWithString:_plainText attributes:nil];
     }
     else
     {
         self.styleComponents = nil;
-        self.htmlAttributedText = nil;
         self.plainText = nil;
     }
+
+    [self setNeedsFramesetter];
+    [self setNeedsDisplay];
+    [self invalidateIntrinsicContentSize];
+}
+
+- (NSAttributedString *)htmlAttributedText
+{
+    if (!_htmlAttributedText)
+    {
+        _htmlAttributedText = [self applyStylesToString:_plainText];
+    }
+
+    return _htmlAttributedText;
 }
 
 - (void)setHtmlAttributedText:(NSAttributedString *)htmlAttributedText
@@ -504,89 +558,100 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     _htmlAttributedText = [htmlAttributedText copy];
 
-    if (htmlAttributedText)
-    {
-        _htmlAttributedText = [self applyStylesToString:_plainText];
-    }
-
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
-    [self invalidateIntrinsicContentSize];
+}
+
+- (void)setNeedsFramesetter
+{
+    _needsFramesetter = YES;
 }
 
 - (CTFramesetterRef)framesetter
 {
-    return CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)self.renderedAttributedText);
+    if (_needsFramesetter)
+    {
+        @synchronized(self)
+        {
+            CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)self.htmlAttributedText);
+            self.framesetter = framesetter;
+            _needsFramesetter = NO;
+
+            if (framesetter)
+            {
+                CFRelease(framesetter);
+            }
+        }
+    }
+
+    return _framesetter;
+}
+
+- (CTFramesetterRef)highlightFramesetter
+{
+    return _highlightFramesetter;
+}
+
+- (void)setHighlightFramesetter:(CTFramesetterRef)highlightFramesetter
+{
+    if (highlightFramesetter)
+    {
+        CFRetain(highlightFramesetter);
+    }
+
+    if (_highlightFramesetter)
+    {
+        CFRelease(_highlightFramesetter);
+    }
+
+    _highlightFramesetter = highlightFramesetter;
+}
+
+- (void)setFramesetter:(CTFramesetterRef)framesetter
+{
+    if (framesetter)
+    {
+        CFRetain(framesetter);
+    }
+
+    if (_framesetter)
+    {
+        CFRelease(_framesetter);
+    }
+
+    _framesetter = framesetter;
 }
 
 - (void)setActiveLink:(NSTextCheckingResult *)activeLink
 {
     _activeLink = activeLink;
-    [self setNeedsDisplay];
-}
 
-- (void)setLinkAttributes:(NSDictionary *)linkAttributes
-{
-    _linkAttributes = linkAttributes;
-    [self setNeedsDisplay];
-}
+    if (_activeLink && [_activeLinkAttributes count] > 0)
+    {
+        if (!_inactiveAttributedText)
+        {
+            self.inactiveAttributedText = [self.htmlAttributedText copy];
+        }
 
-- (NSAttributedString *)renderedAttributedText
-{
-    return [self applyStylesToString:_plainText];
-}
+        NSMutableAttributedString *mutableAttributedString = [_inactiveAttributedText mutableCopy];
+        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, [_inactiveAttributedText length])))
+        {
+            [self applyFontAttributes:_activeLinkAttributes
+                               toText:(__bridge CFMutableAttributedStringRef)mutableAttributedString
+                           atPosition:_activeLink.range.location
+                           withLength:_activeLink.range.length];
+        }
 
-- (void)setShadowRadius:(CGFloat)shadowRadius
-{
-    _shadowRadius = shadowRadius;
-    [self setNeedsDisplay];
-}
+        self.htmlAttributedText = mutableAttributedString;
+        [self setNeedsDisplay];
+    }
+    else if (self.inactiveAttributedText)
+    {
+        self.htmlAttributedText = self.inactiveAttributedText;
+        self.inactiveAttributedText = nil;
 
-- (void)setHighlightedShadowRadius:(CGFloat)highlightedShadowRadius
-{
-    _highlightedShadowRadius = highlightedShadowRadius;
-    [self setNeedsDisplay];
-}
-
-- (void)setHighlightedShadowOffset:(CGSize)highlightedShadowOffset
-{
-    _highlightedShadowOffset = highlightedShadowOffset;
-    [self setNeedsDisplay];
-}
-
-- (void)setHighlightedShadowColor:(UIColor *)highlightedShadowColor
-{
-    _highlightedShadowColor = highlightedShadowColor;
-    [self setNeedsDisplay];
-}
-
-- (void)setFirstLineIndent:(CGFloat)firstLineIndent
-{
-    _firstLineIndent = firstLineIndent;
-    [self setNeedsDisplay];
-}
-
-- (void)setLeading:(CGFloat)leading
-{
-    _firstLineIndent = leading;
-    [self setNeedsDisplay];
-}
-
-- (void)setLineHeightMultiple:(CGFloat)lineHeightMultiple
-{
-    _firstLineIndent = lineHeightMultiple;
-    [self setNeedsDisplay];
-}
-
-- (void)setTextInsets:(UIEdgeInsets)textInsets
-{
-    _textInsets = textInsets;
-    [self setNeedsDisplay];
-}
-
-- (void)setVerticalAlignment:(MDHTMLLabelVerticalAlignment)verticalAlignment
-{
-    verticalAlignment = _verticalAlignment;
-    [self setNeedsDisplay];
+        [self setNeedsDisplay];
+    }
 }
 
 #pragma mark - Drawing
@@ -597,6 +662,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         return [super drawTextInRect:rect];
     }
+
+    NSAttributedString *originalAttributedText = nil;
 
     // Adjust the font size to fit width, if necessarry
     if (self.adjustsFontSizeToFitWidth && self.numberOfLines > 0)
@@ -613,6 +680,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
         if (textWidth > availableWidth && textWidth > 0.0f)
         {
+            originalAttributedText = [self.htmlAttributedText copy];
             self.htmlAttributedText = NSAttributedStringByScalingFontSize(self.htmlAttributedText, availableWidth / textWidth);
         }
     }
@@ -626,7 +694,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         CGContextTranslateCTM(c, 0.0f, rect.size.height);
         CGContextScaleCTM(c, 1.0f, -1.0f);
 
-        CFRange textRange = CFRangeMake(0, (CFIndex)[self.htmlAttributedText length]);
+        CFRange textRange = CFRangeMake(0, (CFIndex)_htmlAttributedText.length);
 
         // First, get the text rect (which takes vertical centering into account)
         CGRect textRect = [self textRectForBounds:rect limitedToNumberOfLines:self.numberOfLines];
@@ -635,14 +703,44 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         CGContextTranslateCTM(c, rect.origin.x, rect.size.height - textRect.origin.y - textRect.size.height);
 
         // Second, trace the shadow before the actual text, if we have one
-        if (self.shadowColor && !self.highlighted) {
-            CGContextSetShadowWithColor(c, self.shadowOffset, self.shadowRadius, self.shadowColor.CGColor);
-        } else if (self.highlightedShadowColor) {
-            CGContextSetShadowWithColor(c, self.highlightedShadowOffset, self.highlightedShadowRadius, [self.highlightedShadowColor CGColor]);
+        if (self.shadowColor && !self.highlighted)
+        {
+            CGContextSetShadowWithColor(c, self.shadowOffset, _shadowRadius, self.shadowColor.CGColor);
+        }
+        else if (self.highlightedShadowColor)
+        {
+            CGContextSetShadowWithColor(c, _highlightedShadowOffset, _highlightedShadowRadius, _highlightedShadowColor.CGColor);
         }
 
-        // Finally, draw the text itself (on top of the shadow, if there is one)
-        [self drawFramesetter:self.framesetter attributedString:self.renderedAttributedText textRange:textRange inRect:textRect context:c];
+        // Finally, draw the text or highlighted text itself (on top of the shadow, if there is one)
+        if (self.highlighted && self.highlightedTextColor)
+        {
+            NSMutableAttributedString *highlightAttributedString = [self.htmlAttributedText mutableCopy];
+
+            [highlightAttributedString addAttribute:(__bridge NSString *)kCTForegroundColorAttributeName
+                                              value:(id)[self.highlightedTextColor CGColor]
+                                              range:NSMakeRange(0, highlightAttributedString.length)];
+
+            if (!self.highlightFramesetter)
+            {
+                CTFramesetterRef highlightFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)highlightAttributedString);
+                [self setHighlightFramesetter:highlightFramesetter];
+                CFRelease(highlightFramesetter);
+            }
+
+            [self drawFramesetter:self.highlightFramesetter attributedString:highlightAttributedString textRange:textRange inRect:textRect context:c];
+        }
+        else
+        {
+            [self drawFramesetter:self.framesetter attributedString:self.htmlAttributedText textRange:textRange inRect:textRect context:c];
+        }
+
+        // If we adjusted the font size, set it back to its original size
+        if (originalAttributedText)
+        {
+            // Use ivar directly to avoid clearing out framesetter and renderedAttributedText
+            _htmlAttributedText = originalAttributedText;
+        }
     }
     CGContextRestoreGState(c);
 }
@@ -731,7 +829,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                 if (lastLineRange.length > 0)
                 {
                     // Remove any newline at the end (we don't want newline space between the text and the truncation token). There can only be one, because the second would be on the next line.
-                    unichar lastCharacter = [[truncationString string] characterAtIndex:(NSUInteger)(lastLineRange.length - 1)];
+                    unichar lastCharacter = [truncationString.string characterAtIndex:(NSUInteger)(lastLineRange.length - 1)];
                     if ([[NSCharacterSet newlineCharacterSet] characterIsMember:lastCharacter])
                     {
                         [truncationString deleteCharactersInRange:NSMakeRange((NSUInteger)(lastLineRange.length - 1), 1)];
@@ -983,7 +1081,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     CGFloat firstLineIndent = self.firstLineIndent + leftMargin;
 
     CTLineBreakMode lineBreakMode = kCTLineBreakByWordWrapping;
-    if (self.numberOfLines == 1) {
+    if (self.numberOfLines == 1)
+    {
         lineBreakMode = CTLineBreakModeFromMDLineBreakMode(self.lineBreakMode);
     }
 
@@ -1087,7 +1186,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     CGFloat firstLineIndent = self.firstLineIndent + leftMargin;
 
     CTLineBreakMode lineBreakMode = kCTLineBreakByWordWrapping;
-    if (self.numberOfLines == 1) {
+    if (self.numberOfLines == 1)
+    {
         lineBreakMode = CTLineBreakModeFromMDLineBreakMode(self.lineBreakMode);
     }
 
@@ -1506,15 +1606,18 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 #pragma mark - UILabel
 
-- (void)setHighlighted:(BOOL)highlighted {
+- (void)setHighlighted:(BOOL)highlighted
+{
     [super setHighlighted:highlighted];
     [self setNeedsDisplay];
 }
 
 // Fixes crash when loading from a UIStoryboard
-- (UIColor *)textColor {
+- (UIColor *)textColor
+{
 	UIColor *color = [super textColor];
-	if (!color) {
+	if (!color)
+    {
 		color = [UIColor blackColor];
 	}
 
@@ -1626,7 +1729,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     return [self linkAtCharacterIndex:idx];
 }
 
-- (CFIndex)characterIndexAtPoint:(CGPoint)p {
+- (CFIndex)characterIndexAtPoint:(CGPoint)p
+{
     if (!CGRectContainsPoint(self.bounds, p))
     {
         return NSNotFound;
@@ -1721,15 +1825,18 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     self.activeLink = [self linkAtPoint:[touch locationInView:self]];
 
-    self.holdGestureTimer = [NSTimer scheduledTimerWithTimeInterval:_minimumPressDuration
-                                                             target:self
-                                                           selector:@selector(handleDidHoldTouch:)
-                                                           userInfo:touch
-                                                            repeats:NO];
-
-    if (!self.activeLink)
+    if (self.activeLink)
+    {
+        self.holdGestureTimer = [NSTimer scheduledTimerWithTimeInterval:_minimumPressDuration
+                                                                 target:self
+                                                               selector:@selector(handleDidHoldTouch:)
+                                                               userInfo:touch
+                                                                repeats:NO];
+    }
+    else
     {
         [super touchesBegan:touches withEvent:event];
+        self.highlighted = YES;
     }
 }
 
@@ -1755,6 +1862,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)touchesEnded:(NSSet *)touches
            withEvent:(UIEvent *)event
 {
+    self.highlighted = NO;
+
     if (self.activeLink)
     {
         NSTextCheckingResult *result = self.activeLink;
@@ -1776,15 +1885,20 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)touchesCancelled:(NSSet *)touches
                withEvent:(UIEvent *)event
 {
-    if (self.activeLink) {
+    if (self.activeLink)
+    {
         self.activeLink = nil;
-    } else {
+    }
+    else
+    {
         [super touchesCancelled:touches withEvent:event];
     }
 }
 
 - (void)handleDidHoldTouch:(NSTimer *)timer
 {
+    self.highlighted = NO;
+
     [_holdGestureTimer invalidate];
     
     if ([_delegate respondsToSelector:@selector(HTMLLabel:didHoldLinkWithURL:)])
