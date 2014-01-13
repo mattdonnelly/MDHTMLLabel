@@ -27,8 +27,6 @@
 
 #define kMDLineBreakWordWrapTextWidthScalingFactor (M_PI / M_E)
 
-#define IS_INACTIVE (CGColorSpaceGetModel(CGColorGetColorSpace([self.tintColor CGColor])) == kCGColorSpaceModelMonochrome)
-
 static CGFloat const MDFLOAT_MAX = 100000;
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
@@ -596,7 +594,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         NSMutableAttributedString *mutableAttributedString = [_inactiveAttributedText mutableCopy];
         if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, [_inactiveAttributedText length])))
         {
-            [self applyFontAttributes:_activeLinkAttributes
+            NSMutableDictionary *mutableActiveLinkAttributes = [_activeLinkAttributes mutableCopy];
+            if (!mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableActiveLinkAttributes[NSForegroundColorAttributeName])
+            {
+                mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor redColor];
+            }
+
+            [self applyFontAttributes:mutableActiveLinkAttributes
                                toText:(__bridge CFMutableAttributedStringRef)mutableAttributedString
                            atPosition:_activeLink.range.location
                            withLength:_activeLink.range.length];
@@ -913,67 +917,23 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
         {
-            if (IS_INACTIVE)
+            NSMutableDictionary *mutableLinkAttributes = [_linkAttributes mutableCopy];
+            if (!_linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
             {
-                NSMutableDictionary *mutableInactiveLinkAttributes = [_inactiveLinkAttributes mutableCopy];
-                if (!mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName])
+                if ([self respondsToSelector:@selector(tintColor)])
                 {
-                    [self applyBoldStyleToText:attrString atPosition:component.position withLength:component.text.length];
+                    mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = self.tintColor;
                 }
-
-                if (!mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableInactiveLinkAttributes[NSForegroundColorAttributeName])
+                else
                 {
-                    mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor grayColor];
+                    mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor blueColor];
                 }
-
-                [self applyFontAttributes:mutableInactiveLinkAttributes
-                                   toText:attrString
-                               atPosition:component.position
-                               withLength:component.text.length];
             }
-            else if (NSEqualRanges(_activeLink.range, NSMakeRange(component.position, component.text.length)))
-            {
-                NSMutableDictionary *mutableActiveLinkAttributes = [_activeLinkAttributes mutableCopy];
-                if (!mutableActiveLinkAttributes[(NSString *)kCTFontAttributeName] && !mutableActiveLinkAttributes[NSFontAttributeName])
-                {
-                    [self applyBoldStyleToText:attrString atPosition:component.position withLength:component.text.length];
-                }
 
-                if (!mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableActiveLinkAttributes[NSForegroundColorAttributeName])
-                {
-                    mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor redColor];
-                }
-
-                [self applyFontAttributes:mutableActiveLinkAttributes
-                                   toText:attrString
-                               atPosition:component.position
-                               withLength:component.text.length];
-            }
-            else
-            {
-                NSMutableDictionary *mutableLinkAttributes = [_linkAttributes mutableCopy];
-                if (!_linkAttributes[(NSString *)kCTFontAttributeName] && !mutableLinkAttributes[NSFontAttributeName])
-                {
-                    [self applyBoldStyleToText:attrString atPosition:component.position withLength:component.text.length];
-                }
-
-                if (!_linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
-                {
-                    if ([self respondsToSelector:@selector(tintColor)])
-                    {
-                        mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = self.tintColor;
-                    }
-                    else
-                    {
-                        mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor blueColor];
-                    }
-                }
-
-                [self applyFontAttributes:mutableLinkAttributes
-                                   toText:attrString
-                               atPosition:component.position
-                               withLength:component.text.length];
-            }
+            [self applyFontAttributes:mutableLinkAttributes
+                               toText:attrString
+                           atPosition:component.position
+                           withLength:component.text.length];
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame || [component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
         {
@@ -1646,7 +1606,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         return [super sizeThatFits:size];
     }
 
-    return CTFramesetterSuggestFrameSizeForAttributedStringWithConstraints([self framesetter], self.htmlAttributedText, size, (NSUInteger)self.numberOfLines);
+    return CTFramesetterSuggestFrameSizeForAttributedStringWithConstraints(self.framesetter, self.htmlAttributedText, size, (NSUInteger)self.numberOfLines);
 }
 
 - (CGSize)intrinsicContentSize
@@ -1657,6 +1617,57 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)tintColorDidChange
 {
+    BOOL isInactive = (CGColorSpaceGetModel(CGColorGetColorSpace([self.tintColor CGColor])) == kCGColorSpaceModelMonochrome);
+
+    NSMutableDictionary *mutableLinkAttributes = [_linkAttributes mutableCopy];
+    if (!_linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
+    {
+        if ([self respondsToSelector:@selector(tintColor)])
+        {
+            mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = self.tintColor;
+        }
+        else
+        {
+            mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor blueColor];
+        }
+    }
+
+    NSMutableDictionary *mutableInactiveLinkAttributes = [_inactiveLinkAttributes mutableCopy];
+    if (!mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableInactiveLinkAttributes[NSForegroundColorAttributeName])
+    {
+        mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor grayColor];
+    }
+
+    if (!mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] && !mutableInactiveLinkAttributes[NSFontAttributeName])
+    {
+        if (mutableLinkAttributes[(NSString *)kCTFontAttributeName] && mutableLinkAttributes[NSFontAttributeName])
+        {
+            mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] = mutableLinkAttributes[(NSString *)kCTFontAttributeName];
+        }
+        else
+        {
+            mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] = self.font;
+        }
+    }
+
+    NSDictionary *attributesToRemove = isInactive ? mutableLinkAttributes : mutableInactiveLinkAttributes;
+    NSDictionary *attributesToAdd = isInactive ? mutableInactiveLinkAttributes : mutableLinkAttributes;
+
+    NSMutableAttributedString *mutableAttributedString = [self.htmlAttributedText mutableCopy];
+    for (NSTextCheckingResult *result in self.links)
+    {
+        [attributesToRemove enumerateKeysAndObjectsUsingBlock:^(NSString *name, __unused id value, __unused BOOL *stop)
+        {
+            [mutableAttributedString removeAttribute:name range:result.range];
+        }];
+
+        if (attributesToAdd)
+        {
+            [mutableAttributedString addAttributes:attributesToAdd range:result.range];
+        }
+    }
+
+    self.htmlAttributedText = mutableAttributedString;
     [self setNeedsDisplay];
 }
 

@@ -87,6 +87,13 @@ NSString *const kDemoText = @"<a href='http://github.com/mattdonnelly/MDHTMLLabe
 - (void)HTMLLabel:(MDHTMLLabel *)label didHoldLinkWithURL:(NSURL *)URL
 {
     NSLog(@"Did hold link with URL: %@", URL.absoluteString);
+
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Did hold link with URL:"
+                                                        message:URL.absoluteString
+                                                       delegate:nil
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil];
+    [alertView show];
 }
 
 @end
