@@ -323,14 +323,14 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	[desc appendFormat:@"Text: %@", self.text];
 	[desc appendFormat:@"\nPosition: %li", (long)_position];
 
-    if (_htmlTag)
+    if (self.htmlTag)
     {
         [desc appendFormat:@"\nHTML Tag: %@", self.htmlTag];
     }
 
-    if (_attributes)
+    if (self.attributes)
     {
-        [desc appendFormat:@"\nAttributes: %@", _attributes];
+        [desc appendFormat:@"\nAttributes: %@", self.attributes];
     }
 
 	return desc;
@@ -584,17 +584,17 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     _activeLink = activeLink;
 
-    if (_activeLink && [_activeLinkAttributes count] > 0)
+    if (_activeLink && self.activeLinkAttributes.count > 0)
     {
-        if (!_inactiveAttributedText)
+        if (!self.inactiveAttributedText)
         {
             self.inactiveAttributedText = [self.htmlAttributedText copy];
         }
 
-        NSMutableAttributedString *mutableAttributedString = [_inactiveAttributedText mutableCopy];
-        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, [_inactiveAttributedText length])))
+        NSMutableAttributedString *mutableAttributedString = [self.inactiveAttributedText mutableCopy];
+        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, [self.inactiveAttributedText length])))
         {
-            NSMutableDictionary *mutableActiveLinkAttributes = [_activeLinkAttributes mutableCopy];
+            NSMutableDictionary *mutableActiveLinkAttributes = [self.activeLinkAttributes mutableCopy];
             if (!mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableActiveLinkAttributes[NSForegroundColorAttributeName])
             {
                 mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor redColor];
@@ -622,7 +622,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)drawTextInRect:(CGRect)rect
 {
-    if (!_htmlText)
+    if (!self.htmlText)
     {
         return [super drawTextInRect:rect];
     }
@@ -658,7 +658,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         CGContextTranslateCTM(c, 0.0f, rect.size.height);
         CGContextScaleCTM(c, 1.0f, -1.0f);
 
-        CFRange textRange = CFRangeMake(0, (CFIndex)_htmlAttributedText.length);
+        CFRange textRange = CFRangeMake(0, (CFIndex)self.htmlAttributedText.length);
 
         // First, get the text rect (which takes vertical centering into account)
         CGRect textRect = [self textRectForBounds:rect limitedToNumberOfLines:self.numberOfLines];
@@ -669,11 +669,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         // Second, trace the shadow before the actual text, if we have one
         if (self.shadowColor && !self.highlighted)
         {
-            CGContextSetShadowWithColor(c, self.shadowOffset, _shadowRadius, self.shadowColor.CGColor);
+            CGContextSetShadowWithColor(c, self.shadowOffset, self.shadowRadius, self.shadowColor.CGColor);
         }
         else if (self.highlightedShadowColor)
         {
-            CGContextSetShadowWithColor(c, _highlightedShadowOffset, _highlightedShadowRadius, _highlightedShadowColor.CGColor);
+            CGContextSetShadowWithColor(c, self.highlightedShadowOffset, self.highlightedShadowRadius, self.highlightedShadowColor.CGColor);
         }
 
         // Finally, draw the text or highlighted text itself (on top of the shadow, if there is one)
@@ -917,8 +917,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
         else if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
         {
-            NSMutableDictionary *mutableLinkAttributes = [_linkAttributes mutableCopy];
-            if (!_linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
+            NSMutableDictionary *mutableLinkAttributes = [self.linkAttributes mutableCopy];
+            if (!self.linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
             {
                 if ([self respondsToSelector:@selector(tintColor)])
                 {
@@ -1521,7 +1521,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	}
 
     self.styleComponents = components;
-    _plainText = data;
+    self.plainText = data;
 }
 
 #pragma mark - UILabel
@@ -1547,7 +1547,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (CGRect)textRectForBounds:(CGRect)bounds
      limitedToNumberOfLines:(NSInteger)numberOfLines
 {
-    if (!_htmlText)
+    if (!self.htmlText)
     {
         return [super textRectForBounds:bounds limitedToNumberOfLines:numberOfLines];
     }
@@ -1619,8 +1619,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     BOOL isInactive = (CGColorSpaceGetModel(CGColorGetColorSpace([self.tintColor CGColor])) == kCGColorSpaceModelMonochrome);
 
-    NSMutableDictionary *mutableLinkAttributes = [_linkAttributes mutableCopy];
-    if (!_linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
+    NSMutableDictionary *mutableLinkAttributes = [self.linkAttributes mutableCopy];
+    if (!self.linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
     {
         if ([self respondsToSelector:@selector(tintColor)])
         {
@@ -1632,7 +1632,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
     }
 
-    NSMutableDictionary *mutableInactiveLinkAttributes = [_inactiveLinkAttributes mutableCopy];
+    NSMutableDictionary *mutableInactiveLinkAttributes = [self.inactiveLinkAttributes mutableCopy];
     if (!mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableInactiveLinkAttributes[NSForegroundColorAttributeName])
     {
         mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] = [UIColor grayColor];
@@ -1720,7 +1720,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     CGMutablePathRef path = CGPathCreateMutable();
     CGPathAddRect(path, NULL, textRect);
-    CTFrameRef frame = CTFramesetterCreateFrame([self framesetter], CFRangeMake(0, (CFIndex)[self.htmlAttributedText length]), path, NULL);
+    CTFrameRef frame = CTFramesetterCreateFrame([self framesetter], CFRangeMake(0, (CFIndex)self.htmlAttributedText.length), path, NULL);
     if (frame == NULL)
     {
         CFRelease(path);
@@ -1798,7 +1798,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (self.activeLink)
     {
-        self.holdGestureTimer = [NSTimer scheduledTimerWithTimeInterval:_minimumPressDuration
+        self.holdGestureTimer = [NSTimer scheduledTimerWithTimeInterval:self.minimumPressDuration
                                                                  target:self
                                                                selector:@selector(handleDidHoldTouch:)
                                                                userInfo:touch
@@ -1821,7 +1821,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         if (self.activeLink != [self linkAtPoint:[touch locationInView:self]])
         {
             self.activeLink = nil;
-            [_holdGestureTimer invalidate];
+            [self.holdGestureTimer invalidate];
         }
     }
     else
@@ -1839,11 +1839,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         NSTextCheckingResult *result = self.activeLink;
         self.activeLink = nil;
-        [_holdGestureTimer invalidate];
+        [self.holdGestureTimer invalidate];
         
-        if ([_delegate respondsToSelector:@selector(HTMLLabel:didSelectLinkWithURL:)])
+        if ([self.delegate respondsToSelector:@selector(HTMLLabel:didSelectLinkWithURL:)])
         {
-            [_delegate HTMLLabel:self didSelectLinkWithURL:result.URL];
+            [self.delegate HTMLLabel:self didSelectLinkWithURL:result.URL];
             return;
         }
     }
@@ -1870,14 +1870,14 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     self.highlighted = NO;
 
-    [_holdGestureTimer invalidate];
+    [self.holdGestureTimer invalidate];
     
-    if ([_delegate respondsToSelector:@selector(HTMLLabel:didHoldLinkWithURL:)])
+    if ([self.delegate respondsToSelector:@selector(HTMLLabel:didHoldLinkWithURL:)])
     {
         NSTextCheckingResult *result = self.activeLink;
         self.activeLink = nil;
         
-        [_delegate HTMLLabel:self didHoldLinkWithURL:result.URL];
+        [self.delegate HTMLLabel:self didHoldLinkWithURL:result.URL];
     }
 }
 
@@ -1885,9 +1885,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)copy:(id)sender
 {
-    if (_htmlText)
+    if (self.htmlText)
     {
-        [[UIPasteboard generalPasteboard] setString:_plainText];
+        [[UIPasteboard generalPasteboard] setString:self.plainText];
     }
     else
     {
