@@ -506,7 +506,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     if (!_htmlAttributedText)
     {
-        _htmlAttributedText = [self applyStylesToString:_plainText];
+        self.htmlAttributedText = [self applyStylesToString:_plainText];
     }
 
     return _htmlAttributedText;
@@ -877,7 +877,6 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     // Apply default paragraph text style
     [self applyParagraphStyleToText:attrString attributes:nil range:NSMakeRange(0, string.length)];
 
-
     // Apply font to text
     CTFontRef font = CTFontCreateWithName ((__bridge CFStringRef)self.font.fontName, self.font.pointSize, NULL);
     CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, font);
@@ -1245,6 +1244,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 		CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, customFont);
 		CFRelease(customFont);
 	}
+    else
+    {
+        CTFontRef customFont = CTFontCreateWithName ((__bridge CFStringRef)self.font.fontName, self.font.pointSize, NULL);
+		CFAttributedStringSetAttribute(text, CFRangeFromNSRange(range), kCTFontAttributeName, customFont);
+		CFRelease(customFont);
+    }
 }
 
 - (void)applyBoldStyleToText:(CFMutableAttributedStringRef)text
@@ -1609,7 +1614,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     BOOL isInactive = (CGColorSpaceGetModel(CGColorGetColorSpace([self.tintColor CGColor])) == kCGColorSpaceModelMonochrome);
 
     NSMutableDictionary *mutableLinkAttributes = [self.linkAttributes mutableCopy];
-    if (!self.linkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
+    if (!mutableLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableLinkAttributes[NSForegroundColorAttributeName])
     {
         if ([self respondsToSelector:@selector(tintColor)])
         {
@@ -1621,6 +1626,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
     }
 
+    if (!mutableLinkAttributes[(NSString *)kCTFontAttributeName] && !mutableLinkAttributes[NSFontAttributeName])
+    {
+        mutableLinkAttributes[(NSString *)kCTFontAttributeName] = self.font;
+    }
+
     NSMutableDictionary *mutableInactiveLinkAttributes = [self.inactiveLinkAttributes mutableCopy];
     if (!mutableInactiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableInactiveLinkAttributes[NSForegroundColorAttributeName])
     {
@@ -1629,14 +1639,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (!mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] && !mutableInactiveLinkAttributes[NSFontAttributeName])
     {
-        if (mutableLinkAttributes[(NSString *)kCTFontAttributeName] && mutableLinkAttributes[NSFontAttributeName])
-        {
-            mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] = mutableLinkAttributes[(NSString *)kCTFontAttributeName];
-        }
-        else
-        {
-            mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] = self.font;
-        }
+        mutableInactiveLinkAttributes[(NSString *)kCTFontAttributeName] = mutableLinkAttributes[(NSString *)kCTFontAttributeName];
     }
 
     NSDictionary *attributesToRemove = isInactive ? mutableLinkAttributes : mutableInactiveLinkAttributes;
