@@ -860,7 +860,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     if (!string)
     {
-        return [[NSAttributedString alloc] init];
+        return nil;
     }
 
     // Create attributed string ref for text
@@ -1584,10 +1584,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
            limitedToNumberOfLines:(NSUInteger)numberOfLines
 {
     MDHTMLLabel *label = [[MDHTMLLabel alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
-    label.htmlText = htmlString;
     label.font = font;
     label.numberOfLines = 0;
     label.lineBreakMode = NSLineBreakByWordWrapping;
+    label.htmlText = htmlString;
 
     return [label sizeThatFits:size].height;
 }
@@ -1648,9 +1648,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     for (NSTextCheckingResult *result in self.links)
     {
         [attributesToRemove enumerateKeysAndObjectsUsingBlock:^(NSString *name, __unused id value, __unused BOOL *stop)
-        {
-            [mutableAttributedString removeAttribute:name range:result.range];
-        }];
+         {
+             [mutableAttributedString removeAttribute:name range:result.range];
+         }];
 
         if (attributesToAdd)
         {
@@ -1852,7 +1852,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
            withEvent:(UIEvent *)event
 {
     self.highlighted = NO;
-
+    
     if (self.activeLink)
     {
         NSTextCheckingResult *result = self.activeLink;
@@ -1887,7 +1887,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)handleDidHoldTouch:(NSTimer *)timer
 {
     self.highlighted = NO;
-
+    
     [self.holdGestureTimer invalidate];
     
     if ([self.delegate respondsToSelector:@selector(HTMLLabel:didHoldLinkWithURL:)])
@@ -1914,4 +1914,3 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 }
 
 @end
-
