@@ -75,7 +75,7 @@ Here's an example of how it's used in the demo app.
 NSString *const kDemoText = @"... <font face='Didot-Italic' size='19'>customise</font>  ..."
 ```
 
-MDHTMLLabel also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `ativeLinkAttributes` property.
+MDHTMLLabel also allows you to change the appearence of links inside the text using the `linkAttributes` property which takes an `NSDictionary` of values representing how links should be styled. You can also set the appearence for highlighted links when the user taps one too using the `activeLinkAttributes` property and the appearence of links when the tint color of the view changes using the `inactiveLinkAttributes`.
 
 ```objective-c
 MDHTMLLabel *htmlLabel = [[MDHTMLLabel alloc] initWithFrame:frame];
