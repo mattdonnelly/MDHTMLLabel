@@ -597,7 +597,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
 
         NSMutableAttributedString *mutableAttributedString = [self.inactiveAttributedText mutableCopy];
-        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, [self.inactiveAttributedText length])))
+        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, self.inactiveAttributedText.length)))
         {
             NSMutableDictionary *mutableActiveLinkAttributes = [self.activeLinkAttributes mutableCopy];
             if (!mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableActiveLinkAttributes[NSForegroundColorAttributeName])
@@ -686,7 +686,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             NSMutableAttributedString *highlightAttributedString = [self.htmlAttributedText mutableCopy];
 
             [highlightAttributedString addAttribute:(__bridge NSString *)kCTForegroundColorAttributeName
-                                              value:(id)[self.highlightedTextColor CGColor]
+                                              value:(id)self.highlightedTextColor.CGColor
                                               range:NSMakeRange(0, highlightAttributedString.length)];
 
             if (!self.highlightFramesetter)
@@ -1005,8 +1005,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 	for (NSUInteger i = 0; i < attributes.allKeys.count; i++)
 	{
-		NSString *key = [[attributes allKeys] objectAtIndex:i];
-		id value = [attributes objectForKey:key];
+		NSString *key = attributes.allKeys[i];
+		id value = attributes[key];
 
 		if ([key caseInsensitiveCompare:@"align"] == NSOrderedSame)
 		{
@@ -1073,7 +1073,6 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 		{ kCTParagraphStyleSpecifierHeadIndent, sizeof(CGFloat), &leftMargin },
 		{ kCTParagraphStyleSpecifierTailIndent, sizeof(CGFloat), &rightMargin },
 	};
-
 
 	CTParagraphStyleRef paragraphRef = CTParagraphStyleCreate(settings, sizeof(settings) / sizeof(CTParagraphStyleSetting));
 	CFDictionaryAddValue(styleDict, kCTParagraphStyleAttributeName, paragraphRef);
