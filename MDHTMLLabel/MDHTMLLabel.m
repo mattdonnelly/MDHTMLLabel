@@ -597,7 +597,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
 
         NSMutableAttributedString *mutableAttributedString = [self.inactiveAttributedText mutableCopy];
-        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, self.inactiveAttributedText.length)))
+        if (NSLocationInRange(NSMaxRange(_activeLink.range), NSMakeRange(0, self.inactiveAttributedText.length + 1)))
         {
             NSMutableDictionary *mutableActiveLinkAttributes = [self.activeLinkAttributes mutableCopy];
             if (!mutableActiveLinkAttributes[(NSString *)kCTForegroundColorAttributeName] && !mutableActiveLinkAttributes[NSForegroundColorAttributeName])
@@ -1666,6 +1666,33 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (NSString *)detectURLsInText:(NSString *)text
 {
+    NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
+
+    NSTextCheckingResult *match = [detector firstMatchInString:text
+                                                       options:0
+                                                         range:NSMakeRange(0, text.length)];
+
+    while (match != nil && match.range.location != NSNotFound)
+    {
+        if (match.resultType == NSTextCheckingTypeLink)
+        {
+            // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
+            BOOL insideHref = match.range.location >= 6 && [[text substringWithRange:NSMakeRange(match.range.location - 6, 4)] isEqualToString:@"href"];
+            BOOL wrappedInAnchors = [[text substringWithRange:match.range] rangeOfString:@"a>"].location != NSNotFound;
+
+            if (!insideHref && !wrappedInAnchors)
+            {
+                text = [text stringByReplacingCharactersInRange:match.range
+                                                     withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString]];
+            }
+        }
+
+        match = [detector firstMatchInString:text
+                                     options:0
+                                       range:NSMakeRange(match.range.location + match.range.length,
+                                                         text.length - (match.range.location + match.range.length))];
+    }
+
     return text;
 }
 
