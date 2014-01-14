@@ -483,6 +483,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     }
 
     _htmlText = [htmlText copy];
+    _htmlAttributedText = nil;
 
     if (_htmlText)
     {
