@@ -940,12 +940,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         {
             if ([component.htmlTag caseInsensitiveCompare:@"u"] == NSOrderedSame)
             {
-                CFAttributedStringSetAttribute(attrString, CFRangeMake(component.position, component.text.length),
+                CFAttributedStringSetAttribute(attrString, CFRangeFromNSRange(component.range),
                                                kCTUnderlineStyleAttributeName,  (__bridge CFNumberRef)[NSNumber numberWithInt:kCTUnderlineStyleSingle]);
             }
             else if ([component.htmlTag caseInsensitiveCompare:@"uu"] == NSOrderedSame)
             {
-                CFAttributedStringSetAttribute(attrString, CFRangeMake(component.position, component.text.length),
+                CFAttributedStringSetAttribute(attrString, CFRangeFromNSRange(component.range),
                                                kCTUnderlineStyleAttributeName,  (__bridge CFNumberRef)[NSNumber numberWithInt:kCTUnderlineStyleDouble]);
             }
 
@@ -1461,9 +1461,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
                         if ([component.htmlTag caseInsensitiveCompare:@"a"] == NSOrderedSame)
                         {
-                            NSTextCheckingResult *result = [NSTextCheckingResult linkCheckingResultWithRange:NSMakeRange(component.position, component.text.length)
+                            NSTextCheckingResult *result = [NSTextCheckingResult linkCheckingResultWithRange:component.range
                                                                                                          URL:[NSURL URLWithString:component.attributes[@"href"]]];
-                            [_links addObject:result];
+                            [self.links addObject:result];
                         }
 						break;
 					}
@@ -1853,13 +1853,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
            withEvent:(UIEvent *)event
 {
     self.highlighted = NO;
-    
+
     if (self.activeLink)
     {
         NSTextCheckingResult *result = self.activeLink;
         self.activeLink = nil;
         [self.holdGestureTimer invalidate];
-        
+
         if ([self.delegate respondsToSelector:@selector(HTMLLabel:didSelectLinkWithURL:)])
         {
             [self.delegate HTMLLabel:self didSelectLinkWithURL:result.URL];
@@ -1888,14 +1888,14 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)handleDidHoldTouch:(NSTimer *)timer
 {
     self.highlighted = NO;
-    
+
     [self.holdGestureTimer invalidate];
-    
+
     if ([self.delegate respondsToSelector:@selector(HTMLLabel:didHoldLinkWithURL:)])
     {
         NSTextCheckingResult *result = self.activeLink;
         self.activeLink = nil;
-        
+
         [self.delegate HTMLLabel:self didHoldLinkWithURL:result.URL];
     }
 }
@@ -1912,6 +1912,128 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         [super copy:sender];
     }
+}
+
+#pragma mark - NSCoding
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+    [super encodeWithCoder:coder];
+
+    [coder encodeObject:self.htmlText forKey:NSStringFromSelector(@selector(links))];
+    [coder encodeObject:self.links forKey:NSStringFromSelector(@selector(links))];
+    [coder encodeObject:self.linkAttributes forKey:NSStringFromSelector(@selector(linkAttributes))];
+    [coder encodeObject:self.activeLinkAttributes forKey:NSStringFromSelector(@selector(activeLinkAttributes))];
+    [coder encodeObject:self.inactiveLinkAttributes forKey:NSStringFromSelector(@selector(inactiveLinkAttributes))];
+    [coder encodeDouble:self.minimumPressDuration forKey:NSStringFromSelector(@selector(minimumPressDuration))];
+    [coder encodeDouble:self.shadowRadius forKey:NSStringFromSelector(@selector(shadowRadius))];
+    [coder encodeDouble:self.highlightedShadowRadius forKey:NSStringFromSelector(@selector(highlightedShadowRadius))];
+    [coder encodeCGSize:self.highlightedShadowOffset forKey:NSStringFromSelector(@selector(highlightedShadowOffset))];
+    [coder encodeObject:self.highlightedShadowColor forKey:NSStringFromSelector(@selector(highlightedShadowColor))];
+    [coder encodeDouble:self.firstLineIndent forKey:NSStringFromSelector(@selector(firstLineIndent))];
+    [coder encodeDouble:self.leading forKey:NSStringFromSelector(@selector(leading))];
+    [coder encodeDouble:self.lineHeightMultiple forKey:NSStringFromSelector(@selector(lineHeightMultiple))];
+    [coder encodeUIEdgeInsets:self.textInsets forKey:NSStringFromSelector(@selector(textInsets))];
+    [coder encodeInteger:self.verticalAlignment forKey:NSStringFromSelector(@selector(verticalAlignment))];
+    [coder encodeObject:self.truncationTokenString forKey:NSStringFromSelector(@selector(truncationTokenString))];
+    [coder encodeObject:self.truncationTokenStringAttributes forKey:NSStringFromSelector(@selector(truncationTokenStringAttributes))];
+}
+
+- (id)initWithCoder:(NSCoder *)coder
+{
+    self = [super initWithCoder:coder];
+
+    if (self)
+	{
+		[self commonInit];
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(htmlText))])
+        {
+            self.htmlText = [coder decodeObjectForKey:NSStringFromSelector(@selector(htmlText))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(links))])
+        {
+            self.links = [coder decodeObjectForKey:NSStringFromSelector(@selector(links))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(linkAttributes))])
+        {
+            self.linkAttributes = [coder decodeObjectForKey:NSStringFromSelector(@selector(linkAttributes))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(activeLinkAttributes))])
+        {
+            self.activeLinkAttributes = [coder decodeObjectForKey:NSStringFromSelector(@selector(activeLinkAttributes))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(inactiveLinkAttributes))])
+        {
+            self.inactiveLinkAttributes = [coder decodeObjectForKey:NSStringFromSelector(@selector(inactiveLinkAttributes))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(minimumPressDuration))])
+        {
+            self.minimumPressDuration = [coder decodeDoubleForKey:NSStringFromSelector(@selector(minimumPressDuration))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(shadowRadius))])
+        {
+            self.shadowRadius = [coder decodeDoubleForKey:NSStringFromSelector(@selector(shadowRadius))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(highlightedShadowRadius))])
+        {
+            self.highlightedShadowRadius = [coder decodeDoubleForKey:NSStringFromSelector(@selector(highlightedShadowRadius))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(highlightedShadowOffset))])
+        {
+            self.highlightedShadowOffset = [coder decodeCGSizeForKey:NSStringFromSelector(@selector(highlightedShadowOffset))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(highlightedShadowColor))])
+        {
+            self.highlightedShadowColor = [coder decodeObjectForKey:NSStringFromSelector(@selector(highlightedShadowColor))];
+        }
+
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(firstLineIndent))])
+        {
+            self.firstLineIndent = [coder decodeDoubleForKey:NSStringFromSelector(@selector(firstLineHeadIndent))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(leading))])
+        {
+            self.leading = [coder decodeDoubleForKey:NSStringFromSelector(@selector(leading))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(lineHeightMultiple))])
+        {
+            self.lineHeightMultiple = [coder decodeDoubleForKey:NSStringFromSelector(@selector(lineHeightMultiple))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(textInsets))])
+        {
+            self.textInsets = [coder decodeUIEdgeInsetsForKey:NSStringFromSelector(@selector(textInsets))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(verticalAlignment))])
+        {
+            self.verticalAlignment = [coder decodeIntegerForKey:NSStringFromSelector(@selector(verticalAlignment))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(truncationTokenString))])
+        {
+            self.truncationTokenString = [coder decodeObjectForKey:NSStringFromSelector(@selector(truncationTokenString))];
+        }
+        
+        if ([coder containsValueForKey:NSStringFromSelector(@selector(truncationTokenStringAttributes))])
+        {
+            self.truncationTokenStringAttributes = [coder decodeObjectForKey:NSStringFromSelector(@selector(truncationTokenStringAttributes))];
+        }
+    }
+    
+    return self;
 }
 
 @end
