@@ -1675,6 +1675,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     while (match != nil && match.range.location != NSNotFound)
     {
+        NSUInteger matchLength = match.range.length;
         if (match.resultType == NSTextCheckingTypeLink)
         {
             // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
@@ -1683,15 +1684,17 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
             if (!insideHref && !wrappedInAnchors)
             {
+                NSString *wrappedURL = [NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString];
                 text = [text stringByReplacingCharactersInRange:match.range
-                                                     withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString]];
+                                                     withString:wrappedURL];
+                matchLength = wrappedURL.length;
             }
         }
 
         match = [detector firstMatchInString:text
                                      options:0
-                                       range:NSMakeRange(match.range.location + match.range.length,
-                                                         text.length - (match.range.location + match.range.length))];
+                                       range:NSMakeRange(match.range.location + matchLength,
+                                                         text.length - (match.range.location + matchLength))];
     }
 
     return text;
