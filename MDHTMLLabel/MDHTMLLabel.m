@@ -29,7 +29,6 @@
 
 static CGFloat const MDFLOAT_MAX = 100000;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
 const NSTextAlignment MDTextAlignmentLeft = NSTextAlignmentLeft;
 const NSTextAlignment MDTextAlignmentCenter = NSTextAlignmentCenter;
 const NSTextAlignment MDTextAlignmentRight = NSTextAlignmentRight;
@@ -45,27 +44,9 @@ const NSLineBreakMode MDLineBreakByTruncatingTail = NSLineBreakByTruncatingTail;
 
 typedef NSTextAlignment MDTextAlignment;
 typedef NSLineBreakMode MDLineBreakMode;
-#else
-const UITextAlignment MDTextAlignmentLeft = NSTextAlignmentLeft;
-const UITextAlignment MDTextAlignmentCenter = NSTextAlignmentCenter;
-const UITextAlignment MDTextAlignmentRight = NSTextAlignmentRight;
-const UITextAlignment MDTextAlignmentJustified = NSTextAlignmentJustified;
-const UITextAlignment MDTextAlignmentNatural = NSTextAlignmentNatural;
-
-const UITextAlignment MDLineBreakByWordWrapping = NSLineBreakByWordWrapping;
-const UITextAlignment MDLineBreakByCharWrapping = NSLineBreakByCharWrapping;
-const UITextAlignment MDLineBreakByClipping = NSLineBreakByClipping;
-const UITextAlignment MDLineBreakByTruncatingHead = NSLineBreakByTruncatingHead;
-const UITextAlignment MDLineBreakByTruncatingMiddle = NSLineBreakByTruncatingMiddle;
-const UITextAlignment MDLineBreakByTruncatingTail = NSLineBreakByTruncatingTail;
-
-typedef UITextAlignment MDTextAlignment;
-typedef UILineBreakMode MDLineBreakMode;
-#endif
 
 static inline CTTextAlignment CTTextAlignmentFromMDTextAlignment(MDTextAlignment alignment)
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
     switch (alignment)
     {
 		case NSTextAlignmentLeft: return kCTLeftTextAlignment;
@@ -73,20 +54,10 @@ static inline CTTextAlignment CTTextAlignmentFromMDTextAlignment(MDTextAlignment
 		case NSTextAlignmentRight: return kCTRightTextAlignment;
 		default: return kCTNaturalTextAlignment;
 	}
-#else
-    switch (alignment)
-    {
-		case UITextAlignmentLeft: return kCTLeftTextAlignment;
-		case UITextAlignmentCenter: return kCTCenterTextAlignment;
-		case UITextAlignmentRight: return kCTRightTextAlignment;
-		default: return kCTNaturalTextAlignment;
-	}
-#endif
 }
 
 static inline CTLineBreakMode CTLineBreakModeFromMDLineBreakMode(MDLineBreakMode lineBreakMode)
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
 	switch (lineBreakMode)
     {
 		case NSLineBreakByWordWrapping: return kCTLineBreakByWordWrapping;
@@ -97,47 +68,6 @@ static inline CTLineBreakMode CTLineBreakModeFromMDLineBreakMode(MDLineBreakMode
 		case NSLineBreakByTruncatingMiddle: return kCTLineBreakByTruncatingMiddle;
 		default: return 0;
 	}
-#else
-    return CTLineBreakModeFromUILineBreakMode(lineBreakMode);
-#endif
-}
-
-static inline CTLineBreakMode CTLineBreakModeFromUILineBreakMode(UILineBreakMode lineBreakMode)
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    switch (lineBreakMode)
-    {
-        case UILineBreakModeWordWrap: return kCTLineBreakByWordWrapping;
-        case UILineBreakModeCharacterWrap: return kCTLineBreakByCharWrapping;
-        case UILineBreakModeClip: return kCTLineBreakByClipping;
-        case UILineBreakModeHeadTruncation: return kCTLineBreakByTruncatingHead;
-        case UILineBreakModeTailTruncation: return kCTLineBreakByTruncatingTail;
-        case UILineBreakModeMiddleTruncation: return kCTLineBreakByTruncatingMiddle;
-        default: return 0;
-    }
-#pragma clang diagnostic pop
-}
-
-static inline UILineBreakMode UILineBreakModeFromMDLineBreakMode(MDLineBreakMode lineBreakMode)
-{
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-	switch (lineBreakMode)
-    {
-		case NSLineBreakByWordWrapping: return UILineBreakModeWordWrap;
-		case NSLineBreakByCharWrapping: return UILineBreakModeCharacterWrap;
-		case NSLineBreakByClipping: return UILineBreakModeClip;
-		case NSLineBreakByTruncatingHead: return UILineBreakModeHeadTruncation;
-		case NSLineBreakByTruncatingTail: return UILineBreakModeMiddleTruncation;
-		case NSLineBreakByTruncatingMiddle: return UILineBreakModeTailTruncation;
-		default: return 0;
-	}
-#pragma clang diagnostic pop
-#else
-    return lineBreakMode;
-#endif
 }
 
 static inline CFRange CFRangeFromNSRange(NSRange range)
