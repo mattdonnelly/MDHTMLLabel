@@ -389,6 +389,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         CFRelease(_framesetter);
     }
+    if (_highlightFramesetter)
+    {
+        CFRelease(_highlightFramesetter);
+    }
 }
 
 #pragma mark - Accessors
@@ -907,8 +911,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
     }
 
-
-    return (__bridge NSAttributedString *)attrString;
+	NSAttributedString *styledString = [[NSAttributedString alloc] initWithAttributedString:(__bridge NSAttributedString *)attrString];
+	CFRelease(attrString);
+    return styledString;
 }
 
 - (void)applyParagraphStyleToText:(CFMutableAttributedStringRef)text
