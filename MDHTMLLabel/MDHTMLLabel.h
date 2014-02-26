@@ -81,7 +81,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 /**
  The receiver's delegate.
 
- @discussion A `TTTAttributedLabel` delegate responds to messages sent by tapping on links in the label. You can use the delegate to respond to links referencing a URL, address, phone number, date, or date with a specified time zone and duration.
+ @discussion A `MDHTMLLabelDelegate` delegate responds to messages sent by tapping on links in the label. You can use the delegate to respond to links referencing a URL, address, phone number, date, or date with a specified time zone and duration.
  */
 
 @property (nonatomic, weak) IBOutlet NSObject <MDHTMLLabelDelegate> *delegate;
@@ -178,7 +178,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 @property (nonatomic, assign) UIEdgeInsets textInsets;
 
 /**
- The vertical text alignment for the label, for when the frame size is greater than the text rect size. The vertical alignment is `TTTAttributedLabelVerticalAlignmentCenter` by default.
+ The vertical text alignment for the label, for when the frame size is greater than the text rect size. The vertical alignment is `MDHTMLLabelVerticalAlignmentCenter` by default.
  */
 @property (nonatomic, assign) MDHTMLLabelVerticalAlignment verticalAlignment;
 
@@ -189,7 +189,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 /**
  The truncation token that appears at the end of the truncated line. `nil` by default.
 
- @discussion When truncation is enabled for the label, by setting `lineBreakMode` to either `UILineBreakModeHeadTruncation`, `UILineBreakModeTailTruncation`, or `UILineBreakModeMiddleTruncation`, the token used to terminate the truncated line will be `truncationTokenString` if defined, otherwise the Unicode Character 'HORIZONTAL ELLIPSIS' (U+2026).
+ @discussion When truncation is enabled for the label, by setting `lineBreakMode` to either `NSLineBreakByTruncatingHead`, `NSLineBreakByTruncatingTail`, or `NSLineBreakByTruncatingMiddle`, the token used to terminate the truncated line will be `truncationTokenString` if defined, otherwise the Unicode Character 'HORIZONTAL ELLIPSIS' (U+2026).
  */
 @property (nonatomic, strong) NSString *truncationTokenString;
 
