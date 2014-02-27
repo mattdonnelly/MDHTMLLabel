@@ -1603,21 +1603,33 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (NSString *)detectURLsInText:(NSString *)text
 {
     NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
-
+	
+	NSUInteger matchDetectorStartLocation = 0;
     NSTextCheckingResult *match = [detector firstMatchInString:text
-                                                       options:0
-                                                         range:NSMakeRange(0, text.length)];
-
+                                                       options:kNilOptions
+                                                         range:NSMakeRange(matchDetectorStartLocation, text.length)];
+	
     while (match != nil && match.range.location != NSNotFound)
     {
         NSUInteger matchLength = match.range.length;
         if (match.resultType == NSTextCheckingTypeLink)
         {
-            // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
-            BOOL insideHref = match.range.location >= 6 && [[text substringWithRange:NSMakeRange(match.range.location - 6, 4)] isEqualToString:@"href"];
-            BOOL wrappedInAnchors = [[text substringWithRange:match.range] rangeOfString:@"a>"].location != NSNotFound;
+            // if there's no "<a" or "href" before the link regardless of spaces. e.g. this is valid <a href = "SomeURL">
+			BOOL insideHref = NO;
+			// an href
+			// there has to be room for at least "<a href='" before we bother checking this
+			if ((match.range.location - matchDetectorStartLocation) >= 8) {
+				NSRange prevTextRange = NSMakeRange(matchDetectorStartLocation, (match.range.location - 1) - matchDetectorStartLocation);
+				NSRange prevHrefRange = [text rangeOfString:@"href" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				NSRange prevStartATagRange = [text rangeOfString:@"<a" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				NSRange prevEndTagRange = [text rangeOfString:@">" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				insideHref = (prevHrefRange.location != NSNotFound && prevStartATagRange.location != NSNotFound &&
+							  NSMaxRange(prevStartATagRange) < prevHrefRange.location &&
+							  (prevEndTagRange.location == NSNotFound || (prevEndTagRange.location != NSNotFound &&
+																		   prevStartATagRange.location >= NSMaxRange(prevEndTagRange))));
+			}
 
-            if (!insideHref && !wrappedInAnchors)
+            if (!insideHref)
             {
                 NSString *wrappedURL = [NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString];
                 text = [text stringByReplacingCharactersInRange:match.range
@@ -1626,10 +1638,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             }
         }
 
+		matchDetectorStartLocation = match.range.location + matchLength;
         match = [detector firstMatchInString:text
-                                     options:0
-                                       range:NSMakeRange(match.range.location + matchLength,
-                                                         text.length - (match.range.location + matchLength))];
+                                     options:kNilOptions
+                                       range:NSMakeRange(matchDetectorStartLocation, text.length - matchDetectorStartLocation)];
     }
 
     return text;
