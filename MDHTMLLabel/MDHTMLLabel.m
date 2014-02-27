@@ -29,7 +29,6 @@
 
 static CGFloat const MDFLOAT_MAX = 100000;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
 const NSTextAlignment MDTextAlignmentLeft = NSTextAlignmentLeft;
 const NSTextAlignment MDTextAlignmentCenter = NSTextAlignmentCenter;
 const NSTextAlignment MDTextAlignmentRight = NSTextAlignmentRight;
@@ -45,27 +44,9 @@ const NSLineBreakMode MDLineBreakByTruncatingTail = NSLineBreakByTruncatingTail;
 
 typedef NSTextAlignment MDTextAlignment;
 typedef NSLineBreakMode MDLineBreakMode;
-#else
-const UITextAlignment MDTextAlignmentLeft = NSTextAlignmentLeft;
-const UITextAlignment MDTextAlignmentCenter = NSTextAlignmentCenter;
-const UITextAlignment MDTextAlignmentRight = NSTextAlignmentRight;
-const UITextAlignment MDTextAlignmentJustified = NSTextAlignmentJustified;
-const UITextAlignment MDTextAlignmentNatural = NSTextAlignmentNatural;
-
-const UITextAlignment MDLineBreakByWordWrapping = NSLineBreakByWordWrapping;
-const UITextAlignment MDLineBreakByCharWrapping = NSLineBreakByCharWrapping;
-const UITextAlignment MDLineBreakByClipping = NSLineBreakByClipping;
-const UITextAlignment MDLineBreakByTruncatingHead = NSLineBreakByTruncatingHead;
-const UITextAlignment MDLineBreakByTruncatingMiddle = NSLineBreakByTruncatingMiddle;
-const UITextAlignment MDLineBreakByTruncatingTail = NSLineBreakByTruncatingTail;
-
-typedef UITextAlignment MDTextAlignment;
-typedef UILineBreakMode MDLineBreakMode;
-#endif
 
 static inline CTTextAlignment CTTextAlignmentFromMDTextAlignment(MDTextAlignment alignment)
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
     switch (alignment)
     {
 		case NSTextAlignmentLeft: return kCTLeftTextAlignment;
@@ -73,20 +54,10 @@ static inline CTTextAlignment CTTextAlignmentFromMDTextAlignment(MDTextAlignment
 		case NSTextAlignmentRight: return kCTRightTextAlignment;
 		default: return kCTNaturalTextAlignment;
 	}
-#else
-    switch (alignment)
-    {
-		case UITextAlignmentLeft: return kCTLeftTextAlignment;
-		case UITextAlignmentCenter: return kCTCenterTextAlignment;
-		case UITextAlignmentRight: return kCTRightTextAlignment;
-		default: return kCTNaturalTextAlignment;
-	}
-#endif
 }
 
 static inline CTLineBreakMode CTLineBreakModeFromMDLineBreakMode(MDLineBreakMode lineBreakMode)
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
 	switch (lineBreakMode)
     {
 		case NSLineBreakByWordWrapping: return kCTLineBreakByWordWrapping;
@@ -97,47 +68,6 @@ static inline CTLineBreakMode CTLineBreakModeFromMDLineBreakMode(MDLineBreakMode
 		case NSLineBreakByTruncatingMiddle: return kCTLineBreakByTruncatingMiddle;
 		default: return 0;
 	}
-#else
-    return CTLineBreakModeFromUILineBreakMode(lineBreakMode);
-#endif
-}
-
-static inline CTLineBreakMode CTLineBreakModeFromUILineBreakMode(UILineBreakMode lineBreakMode)
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    switch (lineBreakMode)
-    {
-        case UILineBreakModeWordWrap: return kCTLineBreakByWordWrapping;
-        case UILineBreakModeCharacterWrap: return kCTLineBreakByCharWrapping;
-        case UILineBreakModeClip: return kCTLineBreakByClipping;
-        case UILineBreakModeHeadTruncation: return kCTLineBreakByTruncatingHead;
-        case UILineBreakModeTailTruncation: return kCTLineBreakByTruncatingTail;
-        case UILineBreakModeMiddleTruncation: return kCTLineBreakByTruncatingMiddle;
-        default: return 0;
-    }
-#pragma clang diagnostic pop
-}
-
-static inline UILineBreakMode UILineBreakModeFromMDLineBreakMode(MDLineBreakMode lineBreakMode)
-{
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-	switch (lineBreakMode)
-    {
-		case NSLineBreakByWordWrapping: return UILineBreakModeWordWrap;
-		case NSLineBreakByCharWrapping: return UILineBreakModeCharacterWrap;
-		case NSLineBreakByClipping: return UILineBreakModeClip;
-		case NSLineBreakByTruncatingHead: return UILineBreakModeHeadTruncation;
-		case NSLineBreakByTruncatingTail: return UILineBreakModeMiddleTruncation;
-		case NSLineBreakByTruncatingMiddle: return UILineBreakModeTailTruncation;
-		default: return 0;
-	}
-#pragma clang diagnostic pop
-#else
-    return lineBreakMode;
-#endif
 }
 
 static inline CFRange CFRangeFromNSRange(NSRange range)
@@ -458,6 +388,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     if (_framesetter)
     {
         CFRelease(_framesetter);
+    }
+    if (_highlightFramesetter)
+    {
+        CFRelease(_highlightFramesetter);
     }
 }
 
@@ -977,8 +911,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         }
     }
 
-
-    return (__bridge NSAttributedString *)attrString;
+	NSAttributedString *styledString = [[NSAttributedString alloc] initWithAttributedString:(__bridge NSAttributedString *)attrString];
+	CFRelease(attrString);
+    return styledString;
 }
 
 - (void)applyParagraphStyleToText:(CFMutableAttributedStringRef)text
@@ -1473,42 +1408,71 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 		else
 		{
             // Get text components without the opening '<'
-			NSArray *textComponents = [[text substringFromIndex:1] componentsSeparatedByString:@" "];
-
+			NSMutableArray *textComponents = [[[text substringFromIndex:1] componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] mutableCopy];
+			
             // Capture html tag for later
             htmlTag = textComponents[0];
-
-            // Capture the tag's attributes
-			NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-			for (NSUInteger i = 1; i < textComponents.count; i++)
-			{
-				NSArray *pair = [[textComponents objectAtIndex:i] componentsSeparatedByString:@"="];
-				if (pair.count > 0)
-                {
-					NSString *key = [[pair objectAtIndex:0] lowercaseString];
-
-					if (pair.count >= 2)
-                    {
-						NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
-						value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
-						value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
-                        value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
-						value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
-
-						[attributes setObject:value forKey:key];
-					}
-                    else if (pair.count == 1)
-                    {
-						[attributes setObject:key forKey:key];
+			
+			if (htmlTag.length > 0) {
+				// remove the tag
+				[textComponents removeObjectAtIndex:0];
+				
+				// remove consecutive spaces
+				[textComponents removeObject:@""];
+				
+				// clear out spaces around "=" since they cause a crash and make it hard to identify which are keys and which are values
+				NSString *cleanText = [textComponents componentsJoinedByString:@" "];
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@"= " withString:@"="];
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@" =" withString:@"="];
+				// clean out spaces around value quotes but preserve spaces between pairs
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@" ' " withString:@"' "];
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@"=' " withString:@"='"];
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@" \" " withString:@"\" "];
+				cleanText = [cleanText stringByReplacingOccurrencesOfString:@"=\" " withString:@"=\""];
+				textComponents = [[cleanText componentsSeparatedByString:@" "] mutableCopy];
+				
+				// spaces can still exist inside of values and they will be split, put them back with their key/value pair
+				NSUInteger lastPairIndex = 0;
+				if (textComponents.count > 1) {
+					for (NSUInteger index = 1; index < textComponents.count; index++) {
+						NSRange equalRange = [textComponents[index] rangeOfString:@"="];
+						if (equalRange.location != NSNotFound) {
+							lastPairIndex = index;
+						} else {
+							textComponents[lastPairIndex] = [textComponents[lastPairIndex] stringByAppendingFormat:@" %@", textComponents[index]];
+							textComponents[index] = @"";
+						}
 					}
 				}
+				
+				// Capture the tag's attributes
+				NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+				for (NSString *pairString in textComponents) {
+					if (pairString.length > 0) {
+						NSArray *pair = [pairString componentsSeparatedByString:@"="];
+						if (pair.count > 0) {
+							NSString *key = [pair[0] lowercaseString];
+							if (pair.count >= 2) {
+								NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
+								value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
+								value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
+								value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
+								value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
+								value = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+								attributes[key] = value;
+							} else if (pair.count == 1) {
+								attributes[key] = key;
+							}
+						}
+					}
+				}
+								
+				// Create component from tag and attributes, we'll know the text once we reach the closing tag
+				MDHTMLComponent *component = [[MDHTMLComponent alloc] initWithString:nil htmlTag:htmlTag attributes:attributes];
+				component.position = position;
+				
+				[components addObject:component];
 			}
-
-            // Create component from tag and attributes, we'll know the text once we reach the closing tag
-            MDHTMLComponent *component = [[MDHTMLComponent alloc] initWithString:nil htmlTag:htmlTag attributes:attributes];
-			component.position = position;
-
-			[components addObject:component];
 		}
 
 		last_position = position;
@@ -1668,21 +1632,33 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (NSString *)detectURLsInText:(NSString *)text
 {
     NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
-
+	
+	NSUInteger matchDetectorStartLocation = 0;
     NSTextCheckingResult *match = [detector firstMatchInString:text
-                                                       options:0
-                                                         range:NSMakeRange(0, text.length)];
-
+                                                       options:kNilOptions
+                                                         range:NSMakeRange(matchDetectorStartLocation, text.length)];
+	
     while (match != nil && match.range.location != NSNotFound)
     {
         NSUInteger matchLength = match.range.length;
         if (match.resultType == NSTextCheckingTypeLink)
         {
-            // if there's no 'href' before the link, or if there's a closing anchor tag after it, then we dont wrap the URL in anchor tags
-            BOOL insideHref = match.range.location >= 6 && [[text substringWithRange:NSMakeRange(match.range.location - 6, 4)] isEqualToString:@"href"];
-            BOOL wrappedInAnchors = [[text substringWithRange:match.range] rangeOfString:@"a>"].location != NSNotFound;
+            // if there's no "<a" or "href" before the link regardless of spaces. e.g. this is valid <a href = "SomeURL">
+			BOOL insideHref = NO;
+			// an href
+			// there has to be room for at least "<a href='" before we bother checking this
+			if ((match.range.location - matchDetectorStartLocation) >= 8) {
+				NSRange prevTextRange = NSMakeRange(matchDetectorStartLocation, (match.range.location - 1) - matchDetectorStartLocation);
+				NSRange prevHrefRange = [text rangeOfString:@"href" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				NSRange prevStartATagRange = [text rangeOfString:@"<a" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				NSRange prevEndTagRange = [text rangeOfString:@">" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:prevTextRange];
+				insideHref = (prevHrefRange.location != NSNotFound && prevStartATagRange.location != NSNotFound &&
+							  NSMaxRange(prevStartATagRange) < prevHrefRange.location &&
+							  (prevEndTagRange.location == NSNotFound || (prevEndTagRange.location != NSNotFound &&
+																		   prevStartATagRange.location >= NSMaxRange(prevEndTagRange))));
+			}
 
-            if (!insideHref && !wrappedInAnchors)
+            if (!insideHref)
             {
                 NSString *wrappedURL = [NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString];
                 text = [text stringByReplacingCharactersInRange:match.range
@@ -1691,10 +1667,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             }
         }
 
+		matchDetectorStartLocation = match.range.location + matchLength;
         match = [detector firstMatchInString:text
-                                     options:0
-                                       range:NSMakeRange(match.range.location + matchLength,
-                                                         text.length - (match.range.location + matchLength))];
+                                     options:kNilOptions
+                                       range:NSMakeRange(matchDetectorStartLocation, text.length - matchDetectorStartLocation)];
     }
 
     return text;
