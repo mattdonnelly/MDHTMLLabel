@@ -1657,8 +1657,10 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 							  (prevEndTagRange.location == NSNotFound || (prevEndTagRange.location != NSNotFound &&
 																		   prevStartATagRange.location >= NSMaxRange(prevEndTagRange))));
 			}
+			
+            BOOL wrappedInAnchors = [text rangeOfString:@"a>" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:match.range].location != NSNotFound;
 
-            if (!insideHref)
+            if (!insideHref && !wrappedInAnchors)
             {
                 NSString *wrappedURL = [NSString stringWithFormat:@"<a href='%@'>%@</a>", match.URL.absoluteString, match.URL.absoluteString];
                 text = [text stringByReplacingCharactersInRange:match.range
