@@ -496,6 +496,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         self.styleComponents = nil;
         self.plainText = nil;
+        self.links = [NSMutableArray array];
     }
 
     [self setNeedsFramesetter];
@@ -1394,6 +1395,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
 - (void)extractStyleFromText:(NSString *)data
 {
+    // clear existing links
+    self.links = [NSMutableArray array];
+	
     // Replace html entities
     if (data)
     {
