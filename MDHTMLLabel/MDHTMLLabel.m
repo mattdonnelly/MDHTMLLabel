@@ -1194,7 +1194,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     CFTypeRef actualFontRef = CFAttributedStringGetAttribute(text, range.location, kCTFontAttributeName, NULL);
     CTFontRef boldFontRef = CTFontCreateCopyWithSymbolicTraits(actualFontRef, 0.0, NULL, kCTFontBoldTrait, kCTFontBoldTrait);
 
-    if (!boldFontRef)
+    BOOL forceNewBoldFonRefOnCustomBoldFont = self.customBoldFontName;
+    if (!boldFontRef || forceNewBoldFonRefOnCustomBoldFont)
     {
 //        UIFont *font = [UIFont boldSystemFontOfSize:CTFontGetSize(actualFontRef)];
         UIFont *font = [self boldFontOfSize:CTFontGetSize(actualFontRef)];
@@ -2025,6 +2026,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 #pragma mark - Custom fonts
 - (UIFont *)boldFontOfSize:(CGFloat)size {
     if (self.customBoldFontName) {
+        NSLog(@"Returning custom bold font by name %@", self.customBoldFontName);
         return [UIFont fontWithName:self.customBoldFontName size:size];
     }
     return [UIFont boldSystemFontOfSize:size];
