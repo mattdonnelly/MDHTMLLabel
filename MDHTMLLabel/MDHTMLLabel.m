@@ -1196,7 +1196,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (!boldFontRef)
     {
-        UIFont *font = [UIFont boldSystemFontOfSize:CTFontGetSize(actualFontRef)];
+//        UIFont *font = [UIFont boldSystemFontOfSize:CTFontGetSize(actualFontRef)];
+        UIFont *font = [self boldFontOfSize:CTFontGetSize(actualFontRef)];
         boldFontRef = CTFontCreateWithName((__bridge CFStringRef)font.fontName, self.font.pointSize, NULL);
     }
 
@@ -2021,4 +2022,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     return self;
 }
 
+#pragma mark - Custom fonts
+- (UIFont *)boldFontOfSize:(CGFloat)size {
+    if (self.customBoldFontName) {
+        return [UIFont fontWithName:self.customBoldFontName size:size];
+    }
+    return [UIFont boldSystemFontOfSize:size];
+}
 @end

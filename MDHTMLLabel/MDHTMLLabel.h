@@ -203,6 +203,8 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 /// @name Calculating Size of HTML String
 ///--------------------------------------------
 
+@property(nonatomic, copy) NSString *customBoldFontName;
+
 /**
  Calculate and return the size that best fits a HTML string, given the specified constraints on size and number of lines.
 
