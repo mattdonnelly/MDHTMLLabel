@@ -143,6 +143,23 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
  */
 @property (nonatomic, strong) UIColor *highlightedShadowColor;
 
+
+/**
+ The font name of the custom font which should be used for bold text. If not set the system bold font will be used.
+*/
+@property(nonatomic, copy) NSString *customBoldFontName;
+
+/**
+ The font name of the custom font which should be used for italic text. If not set the system italic font will be used.
+*/
+@property(nonatomic, copy) NSString *customItalicFontName;
+
+/**
+ The font name of the custom font which should be used for bold italic text. If not set the system font with style BoldOblique will be used.
+*/
+@property(nonatomic, copy) NSString *customBoldItalicFontName;
+
+
 ///--------------------------------------------
 /// @name Acccessing Paragraph Style Attributes
 ///--------------------------------------------
@@ -203,7 +220,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
 /// @name Calculating Size of HTML String
 ///--------------------------------------------
 
-@property(nonatomic, copy) NSString *customBoldFontName;
+
 
 /**
  Calculate and return the size that best fits a HTML string, given the specified constraints on size and number of lines.
