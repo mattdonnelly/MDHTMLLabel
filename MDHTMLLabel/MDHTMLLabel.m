@@ -836,6 +836,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         NSInteger index = [styleComponents indexOfObject:component];
         component.componentIndex = index;
 
+        if (component.range.location == NSNotFound || component.range.length == 0) {
+            // ignore bad tags, like <b><b>
+            continue;
+        }
+
         if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame)
         {
             [self applyItalicStyleToText:attrString
