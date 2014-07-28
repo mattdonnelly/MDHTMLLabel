@@ -1559,7 +1559,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     MDHTMLLabel *label = [[MDHTMLLabel alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
     label.font = font;
-    label.numberOfLines = 0;
+    label.numberOfLines = numberOfLines;
     label.lineBreakMode = NSLineBreakByWordWrapping;
     label.htmlText = htmlString;
 
