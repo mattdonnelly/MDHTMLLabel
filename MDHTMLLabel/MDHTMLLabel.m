@@ -377,6 +377,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     self.links = [NSMutableArray array];
     self.minimumPressDuration = 0.5;
+    self.autoDetectUrl = NO;
 
     self.linkAttributes = [NSDictionary dictionary];
     self.activeLinkAttributes = [NSDictionary dictionary];
@@ -422,7 +423,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     if (_htmlText)
     {
         _htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
-        _htmlText = [self detectURLsInText:_htmlText];
+        if (self.autoDetectUrl) _htmlText = [self detectURLsInText:_htmlText];
 
         [self extractStyleFromText:_htmlText];
     }
@@ -835,7 +836,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     {
         NSInteger index = [styleComponents indexOfObject:component];
         component.componentIndex = index;
-
+        
         if (component.range.location == NSNotFound || component.range.length == 0) {
             // ignore bad tags, like <b><b>
             continue;
@@ -1346,8 +1347,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     // Replace html entities
     if (data)
     {
-        data = [data stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
-        data = [data stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+        data = [data stringByReplacingOccurrencesOfString:@"&lt;" withString:@"≪"];
+        data = [data stringByReplacingOccurrencesOfString:@"&gt;" withString:@"≫"];
         data = [data stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
         data = [data stringByReplacingOccurrencesOfString:@"&apos;" withString:@"'"];
         data = [data stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
@@ -1493,6 +1494,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 	}
 
     self.styleComponents = components;
+    data = [data stringByReplacingOccurrencesOfString:@"≪" withString:@"<"];
+    data = [data stringByReplacingOccurrencesOfString:@"≫" withString:@">"];
     self.plainText = data;
 }
 
