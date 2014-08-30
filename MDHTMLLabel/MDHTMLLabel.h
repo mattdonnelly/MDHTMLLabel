@@ -95,7 +95,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
  */
 
 @property (nonatomic, copy) NSString *htmlText;
-
+@property (nonatomic) BOOL autoDetectUrl;
 ///--------------------------------------------
 /// @name Detecting, Accessing, & Styling Links
 ///--------------------------------------------
