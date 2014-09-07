@@ -215,6 +215,7 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
  */
 @property (nonatomic, strong) NSDictionary *truncationTokenStringAttributes;
 
+@property (nonatomic) BOOL autoDetectUrls;
 
 ///--------------------------------------------
 /// @name Calculating Size of HTML String

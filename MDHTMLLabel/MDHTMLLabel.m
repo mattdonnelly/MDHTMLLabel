@@ -377,7 +377,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     self.links = [NSMutableArray array];
     self.minimumPressDuration = 0.5;
-
+	
+    self.autoDetectUrls = YES;
+	
     self.linkAttributes = [NSDictionary dictionary];
     self.activeLinkAttributes = [NSDictionary dictionary];
     self.inactiveLinkAttributes = [NSDictionary dictionary];
@@ -421,9 +423,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (_htmlText)
     {
-        _htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
-        _htmlText = [self detectURLsInText:_htmlText];
-
+        htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
+		
+        if (self.autoDetectUrls)
+        {
+            htmlText = [self detectURLsInText:_htmlText];
+        }
+		
         [self extractStyleFromText:_htmlText];
     }
     else
