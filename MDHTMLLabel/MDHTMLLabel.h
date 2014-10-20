@@ -230,12 +230,14 @@ For the most part, `MDHTMLLabel` behaves the same as `UILabel`. The following ar
  @param font - the font to render the string with
  @param size - the size to constrain the string to
  @param numberOfLines - the number of lines to limit the string to
+ @param autoDetectUrls - detect URLs
 
  @return The size that fits the HTML string within the specified constraints.
  */
 + (CGFloat)sizeThatFitsHTMLString:(NSString *)htmlString
                          withFont:(UIFont *)font
                       constraints:(CGSize)size
-           limitedToNumberOfLines:(NSUInteger)numberOfLines;
+           limitedToNumberOfLines:(NSUInteger)numberOfLines
+                   autoDetectUrls:(BOOL)autoDetectUrls;
 
 @end

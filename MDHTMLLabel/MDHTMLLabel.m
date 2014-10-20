@@ -1567,11 +1567,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                          withFont:(UIFont *)font
                       constraints:(CGSize)size
            limitedToNumberOfLines:(NSUInteger)numberOfLines
+                   autoDetectUrls:(BOOL)autoDetectUrls
 {
     MDHTMLLabel *label = [[MDHTMLLabel alloc] initWithFrame:CGRectMake(0.0, 0.0, size.width, size.height)];
     label.font = font;
     label.numberOfLines = numberOfLines;
     label.lineBreakMode = NSLineBreakByWordWrapping;
+    label.autoDetectUrls = autoDetectUrls;
     label.htmlText = htmlString;
 
     return [label sizeThatFits:size].height;
