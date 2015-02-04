@@ -338,6 +338,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 @private
     NSAttributedString *_htmlAttributedText;
     BOOL _needsFramesetter;
+    BOOL _needsHighlightFramesetter;    // Fixes crash when highlighted text changed
     CTFramesetterRef _framesetter;
     CTFramesetterRef _highlightFramesetter;
 }
@@ -470,6 +471,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)setNeedsFramesetter
 {
     _needsFramesetter = YES;
+    _needsHighlightFramesetter = YES;
 }
 
 - (CTFramesetterRef)framesetter
@@ -630,12 +632,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             [highlightAttributedString addAttribute:(__bridge NSString *)kCTForegroundColorAttributeName
                                               value:(id)self.highlightedTextColor.CGColor
                                               range:NSMakeRange(0, highlightAttributedString.length)];
-
-            if (!self.highlightFramesetter)
+            
+            if (!self.highlightFramesetter ||_needsHighlightFramesetter)
             {
                 CTFramesetterRef highlightFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)highlightAttributedString);
                 [self setHighlightFramesetter:highlightFramesetter];
                 CFRelease(highlightFramesetter);
+                _needsHighlightFramesetter = NO;
             }
 
             [self drawFramesetter:self.highlightFramesetter attributedString:highlightAttributedString textRange:textRange inRect:textRect context:c];
@@ -1507,6 +1510,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)setHighlighted:(BOOL)highlighted
 {
     [super setHighlighted:highlighted];
+    [self setNeedsDisplay];
+}
+
+- (void)setHighlightedTextColor:(UIColor *)highlightedTextColor
+{
+    [super setHighlightedTextColor:highlightedTextColor];
+    [self setNeedsFramesetter];
     [self setNeedsDisplay];
 }
 
