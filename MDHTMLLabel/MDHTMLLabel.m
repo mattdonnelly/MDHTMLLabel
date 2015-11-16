@@ -377,9 +377,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     self.links = [NSMutableArray array];
     self.minimumPressDuration = 0.5;
-	
+
     self.autoDetectUrls = YES;
-	
+
     self.linkAttributes = [NSDictionary dictionary];
     self.activeLinkAttributes = [NSDictionary dictionary];
     self.inactiveLinkAttributes = [NSDictionary dictionary];
@@ -424,12 +424,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     if (_htmlText)
     {
         htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
-		
+
         if (self.autoDetectUrls)
         {
             htmlText = [self detectURLsInText:_htmlText];
         }
-		
+
         [self extractStyleFromText:_htmlText];
     }
     else
@@ -1348,7 +1348,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 {
     // clear existing links
     self.links = [NSMutableArray array];
-	
+
     // Replace html entities
     if (data)
     {
@@ -1429,17 +1429,17 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 		{
             // Get text components without the opening '<'
 			NSMutableArray *textComponents = [[[text substringFromIndex:1] componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] mutableCopy];
-			
+
             // Capture html tag for later
             htmlTag = textComponents[0];
-			
+
 			if (htmlTag.length > 0) {
 				// remove the tag
 				[textComponents removeObjectAtIndex:0];
-				
+
 				// remove consecutive spaces
 				[textComponents removeObject:@""];
-				
+
 				// clear out spaces around "=" since they cause a crash and make it hard to identify which are keys and which are values
 				NSString *cleanText = [textComponents componentsJoinedByString:@" "];
 				cleanText = [cleanText stringByReplacingOccurrencesOfString:@"= " withString:@"="];
@@ -1450,7 +1450,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 				cleanText = [cleanText stringByReplacingOccurrencesOfString:@" \" " withString:@"\" "];
 				cleanText = [cleanText stringByReplacingOccurrencesOfString:@"=\" " withString:@"=\""];
 				textComponents = [[cleanText componentsSeparatedByString:@" "] mutableCopy];
-				
+
 				// spaces can still exist inside of values and they will be split, put them back with their key/value pair
 				NSUInteger lastPairIndex = 0;
 				if (textComponents.count > 1) {
@@ -1464,7 +1464,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 						}
 					}
 				}
-				
+
 				// Capture the tag's attributes
 				NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
 				for (NSString *pairString in textComponents) {
@@ -1473,24 +1473,51 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 						if (pair.count > 0) {
 							NSString *key = [pair[0] lowercaseString];
 							if (pair.count >= 2) {
-								NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
-								value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
-								value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
-								value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
-								value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
-								value = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-								attributes[key] = value;
+								// Adding this so it doesn't crash the app
+                                @try {
+                                    NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
+
+                                    if (value.length > 0) {
+                                        value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
+
+                                        if (value.length > 0) {
+                                            value = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
+                                        }
+
+                                        if (value.length > 0) {
+                                            value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange(0, 1)];
+                                        }
+
+                                        if (value.length > 0) {
+                                            value = [value stringByReplacingOccurrencesOfString:@"'" withString:@"" options:NSLiteralSearch range:NSMakeRange([value length]-1, 1)];
+                                        }
+
+                                        value = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                                    }
+
+                                    attributes[key] = value;
+                                }
+                                @catch (NSException *exception) {
+                                    // Log crash
+                                    NSLog(@"MDHTMLLabel Exception: %@", [exception description]);
+                                }
+                                @finally {
+                                    // Keep the data going
+                                    NSString *value = [[pair subarrayWithRange:NSMakeRange(1, [pair count] - 1)] componentsJoinedByString:@"="];
+                                    value = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                                    attributes[key] = value;
+                                }
 							} else if (pair.count == 1) {
 								attributes[key] = key;
 							}
 						}
 					}
 				}
-								
+
 				// Create component from tag and attributes, we'll know the text once we reach the closing tag
 				MDHTMLComponent *component = [[MDHTMLComponent alloc] initWithString:nil htmlTag:htmlTag attributes:attributes];
 				component.position = position;
-				
+
 				[components addObject:component];
 			}
 		}
@@ -1654,12 +1681,12 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (NSString *)detectURLsInText:(NSString *)text
 {
     NSDataDetector *detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink error:NULL];
-	
+
 	NSUInteger matchDetectorStartLocation = 0;
     NSTextCheckingResult *match = [detector firstMatchInString:text
                                                        options:kNilOptions
                                                          range:NSMakeRange(matchDetectorStartLocation, text.length)];
-	
+
     while (match != nil && match.range.location != NSNotFound)
     {
         NSUInteger matchLength = match.range.length;
@@ -1679,7 +1706,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 							  (prevEndTagRange.location == NSNotFound || (prevEndTagRange.location != NSNotFound &&
 																		   prevStartATagRange.location >= NSMaxRange(prevEndTagRange))));
 			}
-			
+
             BOOL wrappedInAnchors = [text rangeOfString:@"a>" options:NSCaseInsensitiveSearch | NSBackwardsSearch range:match.range].location != NSNotFound;
 
             if (!insideHref && !wrappedInAnchors)
@@ -2004,38 +2031,38 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         {
             self.firstLineIndent = [coder decodeDoubleForKey:NSStringFromSelector(@selector(firstLineHeadIndent))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(leading))])
         {
             self.leading = [coder decodeDoubleForKey:NSStringFromSelector(@selector(leading))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(lineHeightMultiple))])
         {
             self.lineHeightMultiple = [coder decodeDoubleForKey:NSStringFromSelector(@selector(lineHeightMultiple))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(textInsets))])
         {
             self.textInsets = [coder decodeUIEdgeInsetsForKey:NSStringFromSelector(@selector(textInsets))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(verticalAlignment))])
         {
             self.verticalAlignment = [coder decodeIntegerForKey:NSStringFromSelector(@selector(verticalAlignment))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(truncationTokenString))])
         {
             self.truncationTokenString = [coder decodeObjectForKey:NSStringFromSelector(@selector(truncationTokenString))];
         }
-        
+
         if ([coder containsValueForKey:NSStringFromSelector(@selector(truncationTokenStringAttributes))])
         {
             self.truncationTokenStringAttributes = [coder decodeObjectForKey:NSStringFromSelector(@selector(truncationTokenStringAttributes))];
         }
     }
-    
+
     return self;
 }
 
