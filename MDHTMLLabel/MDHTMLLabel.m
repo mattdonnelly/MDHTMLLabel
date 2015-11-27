@@ -1357,6 +1357,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         data = [data stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
         data = [data stringByReplacingOccurrencesOfString:@"&apos;" withString:@"'"];
         data = [data stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
+        data = [data stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@""];
     }
 
 	NSMutableArray *components = [NSMutableArray array];
