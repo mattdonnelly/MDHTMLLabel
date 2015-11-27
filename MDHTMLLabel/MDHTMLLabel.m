@@ -620,7 +620,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         else if (self.highlightedShadowColor)
         {
             CGContextSetShadowWithColor(c, self.highlightedShadowOffset, self.highlightedShadowRadius, self.highlightedShadowColor.CGColor);
-        }
+        } 
 
         // Finally, draw the text or highlighted text itself (on top of the shadow, if there is one)
         if (self.highlighted && self.highlightedTextColor)
