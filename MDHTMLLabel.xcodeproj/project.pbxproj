@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00B0F8E11C0831C00078809B /* pia@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 00B0F8E01C0831C00078809B /* pia@2x.png */; };
 		8BBAE367182C449600236328 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBAE366182C449600236328 /* Foundation.framework */; };
 		8BBAE369182C449600236328 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBAE368182C449600236328 /* CoreGraphics.framework */; };
 		8BBAE36B182C449600236328 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBAE36A182C449600236328 /* UIKit.framework */; };
@@ -35,6 +36,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00B0F8E01C0831C00078809B /* pia@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "pia@2x.png"; path = "../../YYKit/Demo/YYKitDemo/pia@2x.png"; sourceTree = "<group>"; };
 		8BBAE363182C449600236328 /* MDHTMLLabel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MDHTMLLabel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BBAE366182C449600236328 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8BBAE368182C449600236328 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -130,6 +132,7 @@
 		8BBAE36D182C449600236328 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				00B0F8E01C0831C00078809B /* pia@2x.png */,
 				8BBAE36E182C449600236328 /* MDHTMLLabelDemo-Info.plist */,
 				8BBAE36F182C449600236328 /* InfoPlist.strings */,
 				8BBAE372182C449600236328 /* main.m */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8BBAE37F182C449600236328 /* Images.xcassets in Resources */,
+				00B0F8E11C0831C00078809B /* pia@2x.png in Resources */,
 				8BBAE371182C449600236328 /* InfoPlist.strings in Resources */,
 				8BBAE3A8182C70AE00236328 /* Main.storyboard in Resources */,
 			);

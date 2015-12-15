@@ -423,11 +423,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 
     if (_htmlText)
     {
-        htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
+        _htmlText = [_htmlText stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"];
 		
         if (self.autoDetectUrls)
         {
-            htmlText = [self detectURLsInText:_htmlText];
+            _htmlText = [self detectURLsInText:_htmlText];
         }
 		
         [self extractStyleFromText:_htmlText];
@@ -620,7 +620,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         else if (self.highlightedShadowColor)
         {
             CGContextSetShadowWithColor(c, self.highlightedShadowOffset, self.highlightedShadowRadius, self.highlightedShadowColor.CGColor);
-        }
+        } 
 
         // Finally, draw the text or highlighted text itself (on top of the shadow, if there is one)
         if (self.highlighted && self.highlightedTextColor)
@@ -1357,6 +1357,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         data = [data stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
         data = [data stringByReplacingOccurrencesOfString:@"&apos;" withString:@"'"];
         data = [data stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
+        data = [data stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@""];
     }
 
 	NSMutableArray *components = [NSMutableArray array];
