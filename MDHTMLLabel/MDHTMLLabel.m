@@ -847,7 +847,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             continue;
         }
 
-        if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame)
+        if ([component.htmlTag caseInsensitiveCompare:@"i"] == NSOrderedSame
+            || [component.htmlTag caseInsensitiveCompare:@"em"] == NSOrderedSame)
         {
             [self applyItalicStyleToText:attrString
                                    range:component.range];
