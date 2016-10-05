@@ -1357,6 +1357,34 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         data = [data stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
         data = [data stringByReplacingOccurrencesOfString:@"&apos;" withString:@"'"];
         data = [data stringByReplacingOccurrencesOfString:@"&quot;" withString:@"\""];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&aacute;" withString:@"á"];
+        data = [data stringByReplacingOccurrencesOfString:@"&eacute;" withString:@"é"];
+        data = [data stringByReplacingOccurrencesOfString:@"&iacute;" withString:@"í"];
+        data = [data stringByReplacingOccurrencesOfString:@"&oacute;" withString:@"ó"];
+        data = [data stringByReplacingOccurrencesOfString:@"&uacute;" withString:@"ú"];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&Aacute;" withString:@"Á"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Eacute;" withString:@"É"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Iacute;" withString:@"Í"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Oacute;" withString:@"Ó"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Uacute;" withString:@"Ú"];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&auml;" withString:@"ä"];
+        data = [data stringByReplacingOccurrencesOfString:@"&euml;" withString:@"ë"];
+        data = [data stringByReplacingOccurrencesOfString:@"&iuml;" withString:@"ï"];
+        data = [data stringByReplacingOccurrencesOfString:@"&ouml;" withString:@"ö"];
+        data = [data stringByReplacingOccurrencesOfString:@"&uuml;" withString:@"ü"];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&Auml;" withString:@"Ä"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Euml;" withString:@"Ë"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Iuml;" withString:@"Ï"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Ouml;" withString:@"Ö"];
+        data = [data stringByReplacingOccurrencesOfString:@"&Uuml;" withString:@"Ü"];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&ntilde;" withString:@"ñ"];
+        
+        data = [data stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@" "];
     }
 
 	NSMutableArray *components = [NSMutableArray array];
