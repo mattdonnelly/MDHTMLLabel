@@ -56,7 +56,7 @@ Just import the header file and create an instance of MDHTMLLabel like you would
 
 ### Link Interaction
 
-MDHTMLLabel automatically creates user interactable links inside the label to represent HTML anchor tags and allows you to detect when a user taps or holds down on a link by implementing an optional delgate. The delegate has two methods for you to implement:
+MDHTMLLabel automatically creates user interactable links inside the label to represent [HTML anchor tags](https://www.scaler.com/topics/anchor-tag-in-html/) and allows you to detect when a user taps or holds down on a link by implementing an optional delgate. The delegate has two methods for you to implement:
 
 ```objective-c
 - (void)HTMLLabel:(MDHTMLLabel *)label didSelectLinkWithURL:(NSURL *)URL
